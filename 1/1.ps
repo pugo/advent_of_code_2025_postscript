@@ -1,0 +1,102 @@
+%!PS-Adobe-3.0
+
+% -----------------------------------------------------------------------
+%    Advent of Code 2025 in Postscript - Day 1
+%    by Anders Piniesjö
+%
+%    Run with: gs -dNOSAFER 1.ps
+% -----------------------------------------------------------------------
+
+/stdout (%stdout) (w) file def
+
+/count_lines   % filename -- number of lines
+{ 
+   /infile exch (r) file def
+
+   0
+   { % loop
+      infile 128 string readline
+      {
+         pop 1 add
+      }
+      {
+         pop
+         infile closefile
+         exit
+      }  ifelse
+   } loop
+
+} def
+
+/get_lines   % array filename -- array of lines
+{ 
+   /infile exch (r) file def
+   /arr exch def
+   /i 0 def
+
+   { % loop
+      infile 128 string readline
+      {
+         arr i 2 index put pop
+         /i i 1 add def
+      }
+      {
+         pop
+         infile closefile
+         exit
+      } ifelse
+   } loop
+   arr
+} def
+
+/parse_turn    % string (L25, etc) - int (25) str (L)
+{
+   /ts exch def
+   /direction ts 0 1 getinterval def
+   /ticks ts 1 1 index length 1 sub getinterval def
+   ticks cvi
+   direction
+} def
+
+/count_turn    % int (ticks), str (direction) - int (new val)
+{
+   dup (L) eq 
+   { 
+      exch dial exch sub 100 mod 100 add 100 mod
+      /dial exch def
+   } if
+   
+   dup (R) eq 
+   { 
+      exch dial exch add 100 mod
+      /dial exch def
+   } if
+   pop
+} def
+
+
+/input_file (input.txt) def
+
+input_file count_lines
+/input_array exch array def
+
+input_array input_file get_lines 
+/turns exch def
+
+/dial 50 def
+/zerocount 0 def
+
+0 1 input_array length 1 sub
+{
+   turns exch get
+   parse_turn
+   count_turn
+
+   dial 0 eq { /zerocount zerocount 1 add def } if
+} for
+
+stdout (\nAdvent of code 2025 - 1   Result: ) writestring
+stdout zerocount 10 string cvs writestring 
+stdout (\n) writestring
+
+quit
