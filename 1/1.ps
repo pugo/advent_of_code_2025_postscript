@@ -16,14 +16,8 @@
    0
    { % loop
       infile 128 string readline
-      {
-         pop 1 add
-      }
-      {
-         pop
-         infile closefile
-         exit
-      }  ifelse
+      { pop 1 add }
+      { pop infile closefile exit } ifelse
    } loop
 
 } def
@@ -40,11 +34,7 @@
          arr i 2 index put pop
          /i i 1 add def
       }
-      {
-         pop
-         infile closefile
-         exit
-      } ifelse
+      { pop infile closefile exit } ifelse
    } loop
    arr
 } def
@@ -63,15 +53,13 @@
    dup (L) eq 
    { 
       exch dial exch sub 100 mod 100 add 100 mod
-      /dial exch def
    } if
    
    dup (R) eq 
    { 
       exch dial exch add 100 mod
-      /dial exch def
    } if
-   pop
+   exch pop
 } def
 
 
@@ -87,15 +75,16 @@ input_array input_file get_lines
 /zerocount 0 def
 
 0 1 input_array length 1 sub
-{
+{ % for
    turns exch get
    parse_turn
    count_turn
 
+   /dial exch def
    dial 0 eq { /zerocount zerocount 1 add def } if
 } for
 
-stdout (\nAdvent of code 2025 - 1   Result: ) writestring
+stdout (\nAdvent of Code 2025  - Day 1 -  Result: ) writestring
 stdout zerocount 10 string cvs writestring 
 stdout (\n) writestring
 
