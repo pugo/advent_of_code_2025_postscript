@@ -48,7 +48,7 @@
    direction
 } def
 
-/count_turn    % int (ticks), str (direction) - int (new val)
+/count_turns    % int (ticks), str (direction) - int (new val)
 {
    dup (L) eq 
    { 
@@ -59,10 +59,65 @@
    { 
       exch dial exch add 100 mod
    } if
-   exch pop
+   exch pop % pop direction
+} def
+
+/step_1
+{
+   /dial 50 def
+   /zerocount 0 def
+
+   0 1 input_array length 1 sub
+   { % for
+      turns exch get
+      parse_turn
+      count_turns
+      /dial exch def
+
+      dial 0 eq { /zerocount zerocount 1 add def } if
+   } for
+
+   /result_step_1 zerocount def
 } def
 
 
+/count_passes    % int (ticks), str (direction) - int (new val)
+{
+   /dir exch def
+   /ticks exch def
+
+   dir (L) eq 
+   { 
+      dial ticks sub 100 div ceiling dial 100 div ceiling sub abs % leaving 0-passes on stack
+      dial ticks sub 100 mod 100 add 100 mod
+   } if
+   
+   dir (R) eq 
+   { 
+      dial ticks add 100 div floor dial 100 div floor sub abs % leaving 0-passes on stack
+      dial ticks add 100 mod
+   } if
+} def
+
+/step_2
+{
+   /dial 50 def
+   /zerocount 0 def
+
+   0 1 input_array length 1 sub
+   { % for
+      turns exch get
+      parse_turn
+      count_passes
+
+      /dial exch def
+      /zerocount exch zerocount add def
+   } for
+
+   /result_step_2 zerocount def
+} def
+
+% Read input file
 /input_file (input.txt) def
 
 input_file count_lines
@@ -71,21 +126,23 @@ input_file count_lines
 input_array input_file get_lines 
 /turns exch def
 
-/dial 50 def
-/zerocount 0 def
+step_1
+step_2
 
-0 1 input_array length 1 sub
-{ % for
-   turns exch get
-   parse_turn
-   count_turn
+/Times findfont 18 scalefont setfont
 
-   /dial exch def
-   dial 0 eq { /zerocount zerocount 1 add def } if
-} for
+40 700 moveto
+(Advent of Code 2025) show
 
-stdout (\nAdvent of Code 2025  - Day 1 -  Result: ) writestring
-stdout zerocount 10 string cvs writestring 
-stdout (\n) writestring
+40 650 moveto
+(- Day 1 -) show
 
-quit
+40 540 moveto
+(Result Step 1: ) show
+result_step_1 10 string cvs show
+
+40 510 moveto
+(Result Step 2: ) show
+result_step_2 10 string cvs show
+
+%quit
