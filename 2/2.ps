@@ -1,0 +1,202 @@
+%!PS-Adobe-3.0
+
+% -----------------------------------------------------------------------
+%    Advent of Code 2025 in Postscript - Day 2
+%    by Anders Piniesjö
+%
+%    Run with: gs -dNOSAFER 2.ps
+% -----------------------------------------------------------------------
+
+/stdout (%stdout) (w) file def
+
+/ranges [
+ [749639 858415]
+ [65630137 65704528]
+ [10662 29791]
+ [1 17]
+ [9897536 10087630]
+ [1239 2285]
+ [1380136 1595466]
+ [8238934 8372812]
+ [211440 256482]
+ [623 1205]
+ [102561 122442]
+ [91871983 91968838]
+ [62364163 62554867]
+ [3737324037 3737408513]
+ [9494926669 9494965937]
+ [9939271919 9939349036]
+ [83764103 83929201]
+ [24784655 24849904]
+ [166 605]
+ [991665 1015125]
+ [262373 399735]
+ [557161 618450]
+ [937905586 937994967]
+ [71647091 71771804]
+ [8882706 9059390]
+ [2546 10476]
+ [4955694516 4955781763]
+ [47437 99032]
+ [645402 707561]
+ [27 86]
+ [97 157]
+ [894084 989884]
+ [421072 462151]
+] def
+
+
+/is_even  % int - bool
+{
+   2 mod 0 eq
+} bind def
+
+%% ----- step 1 -------
+
+/check_number  % int -- 
+{
+   dup 100 string cvs   % leaves  <int> <string> 
+   dup length is_even 
+   {
+      dup /plen exch length 2 idiv def             % store half strlength
+      dup 0 plen getinterval /str_start exch def   % store first half
+      dup plen plen getinterval /str_end exch def  % store second half
+
+      str_start str_end eq 
+      {
+         pop
+         dup /sum_invalid exch sum_invalid add def
+      }
+      {
+         pop
+      } ifelse
+   }
+   {
+      pop
+   } ifelse
+
+   pop
+} def
+
+/handle_ranges_step_1
+{
+   /sum_invalid 0 def
+
+   ranges
+   {
+      /pair exch def
+      pair 0 get /start exch def
+      pair 1 get /end exch def
+
+      start 1 end 
+      {  % forall  <int>
+         check_number
+      } for
+   } forall
+} def
+
+%% ----- step 2 -------
+
+/check_number_step_2  % int -- bool
+{
+   /num exch def
+   /str num 100 string cvs def  % convert to string
+   /slen str length cvi def     % store strlength
+   /half_slen slen 2 idiv def
+   /found false def
+
+   /res false def           
+
+   num 1 gt
+   {
+      1 1 half_slen  % try all lengths: 1 .. slen/2
+      {
+         /unitlen exch def
+
+         slen unitlen mod 0 ne 
+         {
+            % slen not dividable by unitlen
+         }
+         {
+            str 0 unitlen getinterval /unit exch def
+            
+            /ok true def
+            /i unitlen def
+
+            {
+               i slen ge { exit } if
+               
+               str i unitlen getinterval unit eq not 
+               {
+                  /ok false def
+                  exit
+               } if
+
+               /i i unitlen add def
+            } loop
+
+            ok 
+            {
+               /res true def
+               stdout str writestring stdout (\n) writestring
+            } if
+         } ifelse
+      } for
+   } if
+
+   res
+} def
+
+/handle_ranges_step_2
+{
+   /sum_invalid_step_2 0 def
+
+   ranges
+   {
+      /pair exch def
+      pair 0 get /start exch def
+      pair 1 get /end exch def
+
+      start 1 end 
+      {  % for  <int>
+         dup check_number_step_2
+         {
+            /sum_invalid_step_2 exch sum_invalid_step_2 add def
+         }
+         {
+            pop
+         } ifelse
+      } for
+   } forall
+} def
+
+
+%% ------------------------------
+
+handle_ranges_step_1
+handle_ranges_step_2
+
+
+/Times-Roman findfont 18 scalefont setfont
+
+40 700 moveto
+(Advent of Code 2025) show
+
+40 650 moveto
+(- Day 2 -) show
+
+40 540 moveto
+(Result Step 1: ) show
+sum_invalid 100 string cvs show
+
+40 510 moveto
+(Result Step 2: ) show
+sum_invalid_step_2 100 string cvs show
+
+stdout sum_invalid 100 string cvs writestring
+
+stdout (\nAdvent of Code 2025  - Day 2 -\n) writestring    
+
+stdout (\nStep 1: ) writestring stdout sum_invalid 20 string cvs writestring 
+stdout (\nStep 2: ) writestring stdout sum_invalid_step_2 20 string cvs writestring
+stdout (\n) writestring
