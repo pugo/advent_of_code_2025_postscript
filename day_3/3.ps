@@ -321,30 +321,6 @@
    banksum cvi
 } def
 
-%% ----- step 1 -------
-
-/step_1
-{
-   /jolts_sum 0 def
-   banks
-   {
-      2 maximize_bank
-      /jolts_sum exch jolts_sum add def
-   } forall 
-} def
-
-%% ----- step 2 -------
-
-/step_2
-{
-   /jolts_step2_sum 0 def
-   banks
-   {
-      12 maximize_bank
-      /jolts_step2_sum exch jolts_step2_sum add def
-   } forall 
-} def
-
 /maximize_banks
 {
    /joltlen exch def
@@ -358,7 +334,6 @@
 
    banksums
 } def
-
 
 %% ------------------------------
 
