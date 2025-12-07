@@ -9,13 +9,11 @@
 %%EndComments
 
 % -----------------------------------------------------------------------
-%    Advent of Code 2025 in Postscript - Day 2
-%    by Anders Piniesjö
+%  Advent of Code 2025 in Postscript - Day 2
+%  by Anders Piniesjö
 %
-%    Run with: gs -dNOSAFER 2.ps
+%  Run with: ghostscript 2.ps
 % -----------------------------------------------------------------------
-
-/stdout (%stdout) (w) file def
 
 %% ----- Data -------
 
@@ -60,6 +58,10 @@
 
 /setup_output
 {
+   /stdout (%stdout) (w) file def
+   /print { stdout exch writestring } bind def
+   /println { print stdout (\n) writestring } bind def
+
    /LM   50 def      % Left margin
    /RM   578 def     % Right margin
    /TM   700 def     % Top margin
@@ -139,7 +141,7 @@
       pair 1 get /end exch def
 
       start 1 end 
-      {  % forall  <int>
+      { 
          check_number
       } for
    } forall
@@ -225,14 +227,12 @@ handle_ranges_step_1
 handle_ranges_step_2
 
 LM TM moveto
-
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 2 -) prtstr 1 1 6 { pop newline } for
 setbold (Result Step 1: ) prtstr setnormal sum_invalid 100 string cvs prtstr newline newline
 setbold (Result Step 2: ) prtstr setnormal sum_invalid_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
-stdout (\nAdvent of Code 2025  - Day 2 -\n) writestring    
-stdout (\nStep 1: ) writestring stdout sum_invalid 20 string cvs writestring 
-stdout (\nStep 2: ) writestring stdout sum_invalid_step_2 20 string cvs writestring
-stdout (\n) writestring
+(\nAdvent of Code 2025  - Day 2 - Anders Piniesjö\n) println 
+(Step 1: ) print sum_invalid 20 string cvs println
+(Step 2: ) print sum_invalid_step_2 20 string cvs println
