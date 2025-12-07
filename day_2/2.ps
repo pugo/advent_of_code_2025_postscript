@@ -1,4 +1,12 @@
 %!PS-Adobe-3.0
+%%BoundingBox: 24 24 571 818
+%%Title: Advent of Code 2025 - day 2
+%%For: Hackvalue
+%%Creator: Anders Piniesjö
+%%CreationDate: Sat Dec 06 22:29:41 2025
+%%Orientation: Portrait
+%%DocumentMedia: A4 595 842 0 () ()
+%%EndComments
 
 % -----------------------------------------------------------------------
 %    Advent of Code 2025 in Postscript - Day 2
@@ -8,6 +16,8 @@
 % -----------------------------------------------------------------------
 
 /stdout (%stdout) (w) file def
+
+%% ----- Data -------
 
 /ranges [
  [749639 858415]
@@ -45,6 +55,46 @@
  [421072 462151]
 ] def
 
+
+%% ----- Output -------
+
+/setup_output
+{
+   /LM   50 def      % Left margin
+   /RM   578 def     % Right margin
+   /TM   700 def     % Top margin
+   /BM   10 def      % Bottom margin
+   /fontsize 18 def  % Change this to change font-size
+   /ypos TM def      % current y-position
+   /lineheight fontsize def
+
+   /font_normal /Times-Roman findfont fontsize scalefont def
+   /font_bold /Times-Bold findfont fontsize scalefont def
+   font_normal setfont
+} def
+
+/newline
+ { currentpoint exch pop lineheight sub  % calc y-val
+   BM lt                                 % check if less than bottom margin
+   { showpage LM TM moveto               % New page
+     /ypos TM def }
+   { ypos lineheight sub                 % Go left/down
+     /ypos exch def
+     LM ypos moveto } ifelse
+} def
+   
+/prtstr
+ { dup stringwidth pop      % calc length of string
+   currentpoint pop         % get horizontal position
+   add RM gt                % sum > right margin?
+   {newline} if             % if so, next line
+   show 
+} def
+
+/setnormal { font_normal setfont } bind def
+/setbold { font_bold setfont } bind def
+
+%% ---- Utils ------
 
 /is_even  % int - bool
 {
@@ -100,16 +150,14 @@
 /check_number_step_2  % int -- bool
 {
    /num exch def
-   /str num 100 string cvs def  % convert to string
+   /str num 32 string cvs def   % convert to string
    /slen str length cvi def     % store strlength
-   /half_slen slen 2 idiv def
-   /found false def
 
    /res false def           
 
    num 1 gt
    {
-      1 1 half_slen  % try all lengths: 1 .. slen/2
+      1 1 slen 2 idiv           % try all lengths: 1 .. slen/2
       {
          /unitlen exch def
 
@@ -138,7 +186,7 @@
             ok 
             {
                /res true def
-               stdout str writestring stdout (\n) writestring
+               %stdout str writestring stdout (\n) writestring
             } if
          } ifelse
       } for
@@ -170,33 +218,21 @@
    } forall
 } def
 
-
 %% ------------------------------
 
+setup_output
 handle_ranges_step_1
 handle_ranges_step_2
 
+LM TM moveto
 
-/Times-Roman findfont 18 scalefont setfont
+setbold (Advent of Code 2025) prtstr setnormal newline newline
+(- Day 2 -) prtstr 1 1 6 { pop newline } for
+setbold (Result Step 1: ) prtstr setnormal sum_invalid 100 string cvs prtstr newline newline
+setbold (Result Step 2: ) prtstr setnormal sum_invalid_step_2 100 string cvs prtstr newline
 
-40 700 moveto
-(Advent of Code 2025) show
-
-40 650 moveto
-(- Day 2 -) show
-
-40 540 moveto
-(Result Step 1: ) show
-sum_invalid 100 string cvs show
-
-40 510 moveto
-(Result Step 2: ) show
-sum_invalid_step_2 100 string cvs show
-
-stdout sum_invalid 100 string cvs writestring
-
+% Write to stdout as well
 stdout (\nAdvent of Code 2025  - Day 2 -\n) writestring    
-
 stdout (\nStep 1: ) writestring stdout sum_invalid 20 string cvs writestring 
 stdout (\nStep 2: ) writestring stdout sum_invalid_step_2 20 string cvs writestring
 stdout (\n) writestring
