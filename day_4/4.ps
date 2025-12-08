@@ -3,7 +3,7 @@
 %%Title: Advent of Code 2025 - day 4
 %%For: Hackvalue
 %%Creator: Anders Piniesjö
-%%CreationDate: Sun Dec 07 22:29:41 2025
+%%CreationDate: Mon Dec 08 22:29:41 2025
 %%Orientation: Portrait
 %%DocumentMedia: A4 595 842 0 () ()
 %%EndComments
@@ -13,6 +13,8 @@
 %  by Anders Piniesjö
 %
 %  Run with: ghostscript 4.ps
+%  
+%  -- Or print it on a Postscript printer!
 % -----------------------------------------------------------------------
 
 %% ----- Data -------
@@ -253,9 +255,8 @@
    result
 } def
 
-%% ----- step 1 -------
 
-/count_neighbours  % grid y x -- count
+/count_neighbours  % grid y x -- count  | Count all neighbours with rolls
 {
    /x exch def
    /y exch def
@@ -278,12 +279,14 @@
             /ny y dy add def
             /nx x dx add def
 
-            % bounds check
+            % Check bounds.
             ny 0 ge ny h lt and
             nx 0 ge nx w lt and and
             {
-               grid ny get nx get 
-               /result exch result add def
+               grid ny get nx get
+               0 gt {  % 1 = roll, 2 = roll to be deleted.
+                  /result result 1 add def
+               } if
             } if
          } ifelse
       } for
@@ -292,7 +295,7 @@
    result
 } bind def
 
-/check_cells 
+/check_cells  %% grid -- rolls removed
 {
    /grid exch def
    /h grid length def
@@ -313,7 +316,9 @@
             4 lt
             {
                /total_count total_count 1 add def
+               grid y get x 2 put 
             } if
+
          } if
 
       } for
@@ -322,8 +327,35 @@
    total_count
 } def
 
-%% ----- step 2 -------
+/printgrid
+{
+   {
+      ==
+   } forall
+} def
 
+/remove_cells  %% grid --    | Remove cells marked for removal (2).  
+{
+   /grid exch def
+   /h grid length def
+   /w grid 0 get length def
+
+   0 1 h 1 sub 
+   {
+      /y exch def
+      0 1 w 1 sub 
+      {
+         /x exch def
+
+         grid y get x get
+         2 eq
+         {
+            grid y get x 0 put
+         } if
+
+      } for
+   } for
+} def
 
 %% ------------------------------
 
@@ -331,16 +363,32 @@ setup_output
 
 /roll_array grid make_array def
 
-roll_array check_cells /rolls_step_1 exch def
+/first_removed -1 def
+/total_removed 0 def
 
+{ 
+   roll_array check_cells /removed exch def
+
+   %roll_array printgrid
+   roll_array remove_cells
+   %() println roll_array printgrid
+
+   (Removed: ) print removed 10 string cvs println
+
+   first_removed 0 lt { /first_removed removed def } if
+
+   removed 0 eq { exit } if
+
+   /total_removed total_removed removed add def
+} loop
 
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 4 -) prtstr 1 1 6 { pop newline } for
-setbold (Result Step 1: ) prtstr setnormal rolls_step_1 100 string cvs prtstr newline newline
-%setbold (Result Step 2: ) prtstr setnormal jolts_step2_sum 100 string cvs prtstr newline
+setbold (Result Step 1: ) prtstr setnormal first_removed 100 string cvs prtstr newline newline
+setbold (Result Step 2: ) prtstr setnormal total_removed 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 4 - Anders Piniesjö\n) println 
-(Step 1: ) print rolls_step_1 20 string cvs println
-%(Step 2: ) print jolts_step2_sum 20 string cvs println
+(Step 1: ) print first_removed 20 string cvs println
+(Step 2: ) print total_removed 20 string cvs println
