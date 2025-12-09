@@ -443,7 +443,7 @@
    result
 } bind def
 
-/count_fresh
+/count_fresh  %% Array Array -- int  | Find number of fresh ingredients
 {
    /ingr exch def
    /ranges exch def
@@ -454,7 +454,7 @@
       /i exch def
 
       ranges
-      { % Loop over range arrays.
+      { % Loop over range array.
          aload pop   % push array on stack and pop array
          i exch le exch
          i exch ge and
@@ -468,24 +468,49 @@
    fresh_sum
 } def
 
+/count_fresh_ids  %% Array -- int  | Find number of fresh possible ids in ranges
+{
+   /ranges exch def
+   /resultdict 10000000 dict def
+
+   ranges
+   { % Loop over range array.
+      aload pop   % push array on stack and pop array
+      1 exch
+      {
+         dup resultdict exch known not
+         {
+            resultdict exch true put   % Store ID in result dict "dict[id] = True"
+         } if
+      } for
+   } forall
+
+   resultdict length
+} bind def
 
 
 %% ------------------------------
 
 setup_output
+
+fresh_ranges_demo make_ranges_array /fresh_ranges_demo_array exch def
 fresh_ranges make_ranges_array /fresh_ranges_array exch def
 
 fresh_ranges_array ingredients count_fresh
 /fresh_step_1 exch def
+
+fresh_ranges_array count_fresh_ids
+/fresh_step_2 exch def
+
 
 
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 5 -) prtstr 1 1 6 { pop newline } for
 setbold (Result Step 1: ) prtstr setnormal fresh_step_1 100 string cvs prtstr newline newline
-%setbold (Result Step 2: ) prtstr setnormal total_removed 100 string cvs prtstr newline
+setbold (Result Step 2: ) prtstr setnormal fresh_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 5 - Anders Piniesjö\n) println 
 (Step 1: ) print fresh_step_1 20 string cvs println
-%(Step 2: ) print total_removed 20 string cvs println
+(Step 2: ) print fresh_step_2 20 string cvs println
