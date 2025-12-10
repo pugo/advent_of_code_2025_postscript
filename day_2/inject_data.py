@@ -5,8 +5,8 @@ sys.path.insert(0, "../utils")
 import data_injector
 
 
-class TurnsInjector(data_injector.DataInjector):
-    def parse_data(self):
+class Injector(data_injector.DataInjector):
+    def parse_data(self) -> None:
         intervals = []
         lines = self._data.split('\n')
 
@@ -15,7 +15,7 @@ class TurnsInjector(data_injector.DataInjector):
 
         self._add_dataset('intervals', intervals)
 
-    def generate_data(self):
+    def generate_data(self) -> str:
         lines = []
 
         for interval in self._datasets['intervals']:
@@ -31,7 +31,7 @@ class TurnsInjector(data_injector.DataInjector):
 
 
 if __name__ == '__main__':
-    injector = TurnsInjector()
+    injector = Injector()
     injector.read()
     injector.parse_data()
     injector.inject()

@@ -1,7 +1,7 @@
 
 import argparse
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Callable
 
 
 class DataInjector(ABC):
@@ -34,7 +34,7 @@ class DataInjector(ABC):
         self._target = args.target
         self._output = args.output
 
-    def read(self):
+    def read(self) -> None:
         with open(self._input, 'r') as f:
             self._data = f.read()
 
@@ -46,10 +46,10 @@ class DataInjector(ABC):
         self._datasets[tag] = dataset
 
     @abstractmethod
-    def parse_data(self):
+    def parse_data(self) -> None:
         pass
 
-    def __inject_tag(self, tag: str, generator):
+    def __inject_tag(self, tag: str, generator: Callable) -> None:
         data = generator(self)
 
         i = 0
@@ -62,10 +62,10 @@ class DataInjector(ABC):
             else:
                 i += 1
 
-    def inject(self):
+    def inject(self) -> None:
         for tag, generator in self.TAG_INJECTORS.items():
             self.__inject_tag(tag, generator)
 
-    def write(self):
+    def write(self) -> None:
         with open(self._output, 'w') as f:
             f.write('\n'.join(self._ps))

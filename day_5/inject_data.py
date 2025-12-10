@@ -5,8 +5,8 @@ sys.path.insert(0, "../utils")
 import data_injector
 
 
-class TurnsInjector(data_injector.DataInjector):
-    def parse_data(self):
+class Injector(data_injector.DataInjector):
+    def parse_data(self) -> None:
         write_ranges = True
         lines = self._data.split('\n')
 
@@ -26,7 +26,7 @@ class TurnsInjector(data_injector.DataInjector):
         self._add_dataset('ranges', ranges)
         self._add_dataset('ingredients', ingredients)
 
-    def generate_ranges_data(self):
+    def generate_ranges_data(self) -> str:
         lines = []
 
         for line in self._datasets['ranges']:
@@ -34,7 +34,7 @@ class TurnsInjector(data_injector.DataInjector):
 
         return '\n'.join(lines)
 
-    def generate_ingredients_data(self):
+    def generate_ingredients_data(self) -> str:
         items_per_line = 12
         lines = []
         line = []
@@ -57,7 +57,7 @@ class TurnsInjector(data_injector.DataInjector):
 
 
 if __name__ == '__main__':
-    injector = TurnsInjector()
+    injector = Injector()
     injector.read()
     injector.parse_data()
     injector.inject()

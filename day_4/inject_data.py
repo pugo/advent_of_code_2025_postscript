@@ -5,12 +5,12 @@ sys.path.insert(0, "../utils")
 import data_injector
 
 
-class TurnsInjector(data_injector.DataInjector):
-    def parse_data(self):
+class Injector(data_injector.DataInjector):
+    def parse_data(self) -> None:
         lines = [l for l in self._data.split('\n') if l]
         self._add_dataset('grid', lines)
 
-    def generate_data(self):
+    def generate_data(self) -> str:
         lines = []
 
         for line in self._datasets['grid']:
@@ -24,7 +24,7 @@ class TurnsInjector(data_injector.DataInjector):
 
 
 if __name__ == '__main__':
-    injector = TurnsInjector()
+    injector = Injector()
     injector.read()
     injector.parse_data()
     injector.inject()

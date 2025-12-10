@@ -5,12 +5,12 @@ sys.path.insert(0, "../utils")
 import data_injector
 
 
-class TurnsInjector(data_injector.DataInjector):
-    def parse_data(self):
+class Injector(data_injector.DataInjector):
+    def parse_data(self) -> None:
         turns = self._data.split('\n')
         self._add_dataset('turns', turns)
 
-    def generate_data(self):
+    def generate_data(self) -> str:
         items_per_line = 24
         lines = []
         line = []
@@ -33,7 +33,7 @@ class TurnsInjector(data_injector.DataInjector):
 
 
 if __name__ == '__main__':
-    injector = TurnsInjector()
+    injector = Injector()
     injector.read()
     injector.parse_data()
     injector.inject()
