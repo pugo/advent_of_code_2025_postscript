@@ -88,6 +88,17 @@
 
 %% ---- Utils ------
 
+/max  %% int int -- int   | Return max of two ints
+{
+   2 copy le
+   {
+      exch pop
+   }
+   {
+      pop
+   } ifelse
+} bind def
+
 %% ----- Input conversion -------
 
 
@@ -162,7 +173,7 @@
    } forall
 
    fresh_sum
-} def
+} bind def
 
 /count_fresh_ids  %% Array -- int  | Find number of fresh possible ids in ranges
 {
@@ -185,26 +196,108 @@
 } bind def
 
 
+/sort_range_sweep
+{
+   /swapcount 0 def
+   dup length 2 sub
+   0 1 3 -1 roll
+   {
+      /i exch def
+      dup /a exch i get def
+      dup /b exch i 1 add get def
+
+      a 0 get b 0 get gt
+      {
+         dup i b put
+         dup i 1 add a put
+         /swapcount swapcount 1 add def
+      } if
+   } for
+   pop  % pop array
+   swapcount
+} def
+
+/sort_ranges  %% Array --  | Sorts the array with ranges after start
+{
+   /target exch def
+   % Simple bubble sort is enough.
+   {
+      target sort_range_sweep
+      0 eq { exit } if
+   } loop
+} bind def
+
+/merge_ranges  %% Array -- Array  | Merge ranges that have overlapping ends/starts
+{
+   /sorted_array exch def
+   /len sorted_array length def
+
+   /new_array len array def
+   /new_pos 0 def
+
+   /current sorted_array 0 get def
+
+   1 1 len 1 sub
+   {
+      /i exch def
+      /next sorted_array i get def
+
+      next 0 get current 1 get 1 add le   % +1 to current end to merge adjacent.
+      {
+         current 1 next 1 get current 1 get max put
+      }
+      {
+         new_array new_pos current put
+         /new_pos new_pos 1 add def
+         /current next def
+      } ifelse
+   } for
+
+   new_array new_pos current put
+   /new_pos new_pos 1 add def
+
+   new_pos array                          % Make array with correct number of items
+   dup 0 new_array 0 new_pos getinterval  % result result 0 (slice)
+   putinterval                            % Copy old array to new.
+} bind def
+
+/count_elements_in_ranges  %% Array - int  | Iterate the array and sum elements of all ranges
+{
+   /result 0 def
+   {
+      dup 0 get
+      exch 1 get
+      exch sub 1 add
+      /result result 3 -1 roll add def
+   } forall
+
+   result
+} bind def
+
+
 %% ------------------------------
 
 setup_output
 
-fresh_ranges_demo make_ranges_array /fresh_ranges_demo_array exch def
+% Parse input ranges to an array of [start stop] arrays.
 fresh_ranges make_ranges_array /fresh_ranges_array exch def
 
-fresh_ranges_array ingredients count_fresh
-/fresh_step_1 exch def
+% Sort and merge the ranges
+fresh_ranges_array sort_ranges 
+fresh_ranges_array merge_ranges /merged_ranges_array exch def
 
+% Find ingredients and count the ranges.
+merged_ranges_array ingredients count_fresh /number_of_fresh_ingredients exch def
+merged_ranges_array count_elements_in_ranges /number_of_fresh_ids exch def
 
-
-
+% Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 5 -) prtstr 1 1 6 { pop newline } for
-setbold (Result Step 1: ) prtstr setnormal fresh_step_1 100 string cvs prtstr newline newline
-%setbold (Result Step 2: ) prtstr setnormal fresh_step_2 100 string cvs prtstr newline
+setbold (Fresh ingredients (step 1):  ) prtstr setnormal number_of_fresh_ingredients 100 string cvs prtstr newline newline
+setbold (    Number of IDs (step 2):  ) prtstr setnormal number_of_fresh_ids 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 5 - Anders Piniesjö\n) println 
-(Step 1: ) print fresh_step_1 20 string cvs println
-%(Step 2: ) print fresh_step_2 20 string cvs println
+(Fresh ingredients (step 1): ) print number_of_fresh_ingredients 20 string cvs println
+(    Number of IDs (step 2): ) print number_of_fresh_ids 20 string cvs println
