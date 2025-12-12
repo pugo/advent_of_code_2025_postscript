@@ -74,7 +74,7 @@
 
 /max  %% int int -- int   | Return max of two ints
 {
-   2 copy le { exch pop } { pop } ifelse
+   2 copy lt { exch pop } { pop } ifelse
 } bind def
 
 %% ----- Input conversion -------

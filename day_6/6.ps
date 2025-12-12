@@ -1,0 +1,154 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 24 24 571 818
+%%Title: Advent of Code 2025 - day 5
+%%For: Hackvalue
+%%Creator: Anders Piniesjö
+%%CreationDate: Mon Dec 11 22:29:41 2025
+%%Orientation: Portrait
+%%DocumentMedia: A4 595 842 0 () ()
+%%EndComments
+
+% -----------------------------------------------------------------------
+%  Advent of Code 2025 in Postscript - Day 5
+%  by Anders Piniesjö
+%
+%  Run with: ghostscript 5.ps
+%  
+%  -- Or print it on a Postscript printer!
+% -----------------------------------------------------------------------
+
+%% ----- Data -------
+
+/problem_numbers_demo [
+(123 328  51 64)
+( 45 64  387 23)
+(  6 98  215 314)
+(*   +   *   +)  
+] bind def
+
+/problem_numbers [
+% <<INJECT DATA HERE>>
+] bind def
+
+%% ----- Output -------
+
+/setup_output
+{
+   /stdout (%stdout) (w) file def
+   /print { stdout exch writestring } bind def
+   /println { print stdout (\n) writestring } bind def
+
+   /LM   50 def      % Left margin
+   /RM   578 def     % Right margin
+   /TM   700 def     % Top margin
+   /BM   10 def      % Bottom margin
+   /fontsize 18 def  % Change this to change font-size
+   /ypos TM def      % current y-position
+   /lineheight fontsize def
+
+   /font_normal /Times-Roman findfont fontsize scalefont def
+   /font_bold /Times-Bold findfont fontsize scalefont def
+   font_normal setfont
+} def
+
+/newline
+ { currentpoint exch pop lineheight sub  % calc y-val
+   BM lt                                 % check if less than bottom margin
+   { showpage LM TM moveto               % New page
+     /ypos TM def }
+   { ypos lineheight sub                 % Go left/down
+     /ypos exch def
+     LM ypos moveto } ifelse
+} def
+   
+/prtstr
+ { dup stringwidth pop      % calc length of string
+   currentpoint pop         % get horizontal position
+   add RM gt                % sum > right margin?
+   {newline} if             % if so, next line
+   show 
+} def
+
+/setnormal { font_normal setfont } bind def
+/setbold { font_bold setfont } bind def
+
+%% ---- Utils ------
+
+/max  %% int int -- int   | Return max of two ints
+{
+   2 copy lt { exch pop } { pop } ifelse
+} bind def
+
+/append   %% array elem -- array with elem   | Append elem to array, returning a new array with result.
+{
+   1 index length dup 1 add array   % Create new larger array.
+   dup 0 6 -1 roll putinterval      % Copy old array into new.
+   dup 4 -2 roll                    % Duplicate array and stack roll.
+   exch put                         % Put element to end.
+} bind def
+
+
+%% ----- Input conversion -------
+
+/split_string  %% str -- array   | Split a string with items separated by space into an array of correct types
+{
+   /s exch def
+   s length array /out exch def
+   /n 0 def
+
+   {
+      s token  % Tokenize one, stack: rest token bool
+      {
+         exch /s exch def     % Store rest.
+         out n 3 -1 roll put
+         /n n 1 add def
+      }
+      { exit } ifelse
+   } loop
+
+   n array dup 0 out 0 n getinterval putinterval   % Trim array.
+} def
+
+/split_input  %% input array -- output array
+{
+   /input exch def
+   /rowslen input length def
+   /parsed rowslen array def
+
+   0 1 rowslen 1 sub
+   {
+      /r exch def
+      input r get
+      split_string
+      parsed r 3 -1 roll put
+   } for
+
+   parsed
+} bind def
+
+
+
+/read_puzzle  %% array -- 
+{
+   /input exch def
+
+   input split_input ==
+} bind def
+
+%% ------------------------------
+
+setup_output
+
+problem_numbers_demo read_puzzle
+
+% Output to paper
+LM TM moveto
+setbold (Advent of Code 2025) prtstr setnormal newline newline
+(- Day 6 -) prtstr 1 1 6 { pop newline } for
+%setbold (Fresh ingredients (step 1):  ) prtstr setnormal number_of_fresh_ingredients 100 string cvs prtstr newline newline
+%setbold (    Number of IDs (step 2):  ) prtstr setnormal number_of_fresh_ids 100 string cvs prtstr newline
+
+% Write to stdout as well
+(\nAdvent of Code 2025  - Day 6 - Anders Piniesjö\n) println 
+%(Fresh ingredients (step 1): ) print number_of_fresh_ingredients 20 string cvs println
+%(    Number of IDs (step 2): ) print number_of_fresh_ids 20 string cvs println
