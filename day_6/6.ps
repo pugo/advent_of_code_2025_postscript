@@ -126,29 +126,86 @@
    parsed
 } bind def
 
+/turn_input
+{
+   dup length ==
+} bind def
+
+/add_n 
+{
+   /n exch 1 sub def
+   /sum 0 def
+   n {
+       /sum exch sum add def
+   } repeat
+   sum
+} def
+
+/mul_n 
+{
+   /n exch 1 sub def
+   /sum 1 def
+   n {
+       /sum exch sum mul def
+   } repeat
+   sum
+} def
+
+
+/calc_op  % any1 .. anyn op n -- int
+{
+   /n exch def
+   
+   /* eq
+   {
+      n mul_n
+   }
+   {
+      n add_n
+   } ifelse
+
+} bind def
 
 
 /read_puzzle  %% array -- 
 {
    /input exch def
+   /read_puzzle_sum 0 def
 
-   input split_input ==
+   input split_input /split exch def
+   split length /height exch def
+   split 0 get length /width exch def
+
+   0 1 width 1 sub 
+   {
+      /x exch def
+      0 1 height 1 sub
+      {
+         /y exch def
+
+         split y get x get         
+         
+      } for
+      height calc_op
+      /read_puzzle_sum exch read_puzzle_sum add def
+   } for
+   read_puzzle_sum
 } bind def
 
 %% ------------------------------
 
 setup_output
 
-problem_numbers_demo read_puzzle
+problem_numbers read_puzzle /step_1_answer exch def
 
 % Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 6 -) prtstr 1 1 6 { pop newline } for
-%setbold (Fresh ingredients (step 1):  ) prtstr setnormal number_of_fresh_ingredients 100 string cvs prtstr newline newline
-%setbold (    Number of IDs (step 2):  ) prtstr setnormal number_of_fresh_ids 100 string cvs prtstr newline
+setbold (Sum step 1: ) prtstr setnormal step_1_answer 100 string cvs prtstr newline newline
+%setbold (    Number of IDs (step 2):  ) prtstr setnormal step_2_answer 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 6 - Anders Piniesjö\n) println 
-%(Fresh ingredients (step 1): ) print number_of_fresh_ingredients 20 string cvs println
-%(    Number of IDs (step 2): ) print number_of_fresh_ids 20 string cvs println
+(Sum step 1: ) print step_1_answer 20 string cvs println
+%(    Number of IDs (step 2): ) print step_2_answer 20 string cvs println
