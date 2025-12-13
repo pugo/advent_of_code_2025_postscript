@@ -99,6 +99,26 @@
    exch put                         % Put element to end.
 } bind def
 
+/deep_copy_stringarray  %% array -- array   | Deep copy an array of strings.
+{
+   /old exch def
+   /new old length array def
+
+   0 1 old length 1 sub
+   {                       % i
+      dup old exch get     % i str
+      dup length string    % i str newstr
+      0 3 -1 roll          % i newstr 0 str
+      dup length 0 exch    % i newstr 0 str 0 slen
+      getinterval          % i newstr 0 str
+      2 index              % i newstr 0 str newstr
+      5 1 roll             % newstr i newstr 0 str
+      putinterval          % newstr i
+      new exch 3 -1 roll   % new i 
+      put    
+   } for
+   new
+} bind def
 
 %% ----- Input conversion -------
 
@@ -144,7 +164,7 @@
    } ifelse
 } bind def
 
-/beam  %% array[str] -- 
+/beam  %% array[str] -- int   | Step 1, count number of splits. Will mutate the input array.
 {
    /input exch def
    /height input length def
@@ -171,14 +191,88 @@
    splitcount
 } bind def
 
+/init_count  %% str -- array   | return array with same length, with 1 at S.
+{
+   /is exch def
+   /oa is length array def
+
+   0 1 is length 1 sub
+   {
+      /z exch def
+      is z get cS eq
+      { oa z 1 put }
+      { oa z 0 put } ifelse
+   } for
+   oa ==
+   oa
+} bind def
+
+/zero_array  %% n -- array   | Crate array with n number of 0.
+{
+   dup array exch   % array n
+   0 1 3 -1 roll 1 sub
+   {  % array i
+      2 copy 0 put   % array i
+      pop
+   } for
+} bind def
+
+/quantum_beam  %% array[str] -- int
+{
+   /input exch def
+   /height input length def
+   /width input 0 get length def
+
+   /count_array input 0 get init_count def
+
+   1 1 height 1 sub  %% for height
+   {
+      /qy exch def
+      /new_count width zero_array def
+
+      input qy get /row exch def
+
+      0 1 row length 1 sub          % for width
+      {
+         /qx exch def
+         row qx get
+
+         dup cDot eq
+         {
+%            new_count 2 index
+%            new_count 4 index get
+%            count_array 5 index get add put
+         }
+         {
+            dup cSplit eq
+            {
+               (split ) ==
+            }
+            {
+            } ifelse
+         } ifelse
+         pop
+
+      } for
+      count_array ==
+   } for
+
+} bind def
+
 
 %% ------------------------------
 
 setup_output
 
-input_data beam /result_step_1 exch def
+input_data deep_copy_stringarray /step1_data exch def
+input_data deep_copy_stringarray /step2_data exch def
 
-input_data { println } forall
+step1_data beam /result_step_1 exch def
+
+step1_data { println } forall
+%step2_data { println } forall
+
+demo_data quantum_beam =
 
 % Output to paper
 LM TM moveto
