@@ -1,30 +1,23 @@
 %!PS-Adobe-3.0
 %%BoundingBox: 24 24 571 818
-%%Title: Advent of Code 2025 - day 5
+%%Title: Advent of Code 2025 - day 6
 %%For: Hackvalue
 %%Creator: Anders Piniesjö
-%%CreationDate: Mon Dec 11 22:29:41 2025
+%%CreationDate: Mon Dec 13 01:18:41 2025
 %%Orientation: Portrait
 %%DocumentMedia: A4 595 842 0 () ()
 %%EndComments
 
 % -----------------------------------------------------------------------
-%  Advent of Code 2025 in Postscript - Day 5
+%  Advent of Code 2025 in Postscript - Day 6
 %  by Anders Piniesjö
 %
-%  Run with: ghostscript 5.ps
+%  Run with: ghostscript 6.ps
 %  
 %  -- Or print it on a Postscript printer!
 % -----------------------------------------------------------------------
 
 %% ----- Data -------
-
-/problem_numbers_demo [
-(123 328  51 64)
-( 45 64  387 23)
-(  6 98  215 314)
-(*   +   *   +)  
-] bind def
 
 /problem_numbers [
 % <<INJECT DATA HERE>>
@@ -109,7 +102,7 @@
    n array dup 0 out 0 n getinterval putinterval   % Trim array.
 } def
 
-/split_input  %% input array -- output array
+/split_input  %% input array -- output array   | Split all input to array with arrays of tokens.
 {
    /input exch def
    /rowslen input length def
@@ -126,42 +119,28 @@
    parsed
 } bind def
 
-/turn_input
-{
-   dup length ==
-} bind def
 
-/add_n 
+/add_n   % n -- sum   | Sum n number of integers from stack
 {
-   /n exch 1 sub def
-   /sum 0 def
-   n {
-       /sum exch sum add def
-   } repeat
-   sum
+   0 exch { add } repeat
 } def
 
-/mul_n 
+/mul_n   % n -- sum   | Multiply n number of integers from stack 
 {
-   /n exch 1 sub def
-   /sum 1 def
-   n {
-       /sum exch sum mul def
-   } repeat
-   sum
+   1 exch { mul } repeat
 } def
 
 
 /calc_op  % any1 .. anyn op n -- int
 {
-   /n exch def
-   
-   /* eq
+   1 sub    % -1 to not count op char
+
+   exch /* eq
    {
-      n mul_n
+      mul_n
    }
    {
-      n add_n
+      add_n
    } ifelse
 
 } bind def
@@ -192,20 +171,90 @@
    read_puzzle_sum
 } bind def
 
+
+/push_number_token  %% int int - int   | push a new number, pushing existing up (*10)
+{
+   token { exch pop exch 10 mul add } if
+} bind def
+
+
+/vertical_iter
+{
+   /input exch def   
+
+   input length /height exch def
+   input 0 get length /width exch def
+   /op_row height 1 sub def
+
+   /vertical_puzzle_sum 0 def
+   /workarray [] def
+   /current_number 0 def
+
+   width 1 sub -1 0  %% iter from right to left
+   {
+      /x exch def
+      0 1 height 1 sub  %% iter from top to bottom
+      {
+         /y exch def
+
+         y op_row lt
+         {
+            input y get x get
+            1 string dup 0 4 -1 roll put
+            current_number exch push_number_token /current_number exch def
+         }
+         {
+            current_number 0 ne
+            {
+               workarray current_number append /workarray exch def
+            } if
+            /current_number 0 def
+
+            input y get x get
+            dup
+            32 ne
+            {
+               43 eq  % +
+               {
+                  workarray aload pop
+                  workarray length
+                  add_n
+                  /vertical_puzzle_sum exch vertical_puzzle_sum add def
+               }
+               {   % *
+                  workarray aload pop
+                  workarray length
+                  mul_n
+                  /vertical_puzzle_sum exch vertical_puzzle_sum add def
+               } ifelse
+
+               /workarray [] def
+            }
+            {
+               pop
+            } ifelse
+         } ifelse
+      } for
+   } for
+   vertical_puzzle_sum
+} bind def
+
+
 %% ------------------------------
 
 setup_output
 
 problem_numbers read_puzzle /step_1_answer exch def
+problem_numbers vertical_iter /step_2_answer exch def
 
 % Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 6 -) prtstr 1 1 6 { pop newline } for
 setbold (Sum step 1: ) prtstr setnormal step_1_answer 100 string cvs prtstr newline newline
-%setbold (    Number of IDs (step 2):  ) prtstr setnormal step_2_answer 100 string cvs prtstr newline
+setbold (Sum step 2: ) prtstr setnormal step_2_answer 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 6 - Anders Piniesjö\n) println 
 (Sum step 1: ) print step_1_answer 20 string cvs println
-%(    Number of IDs (step 2): ) print step_2_answer 20 string cvs println
+(Sum step 2: ) print step_2_answer 20 string cvs println
