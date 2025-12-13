@@ -199,6 +199,7 @@
 
          y op_row lt
          {
+            % Build numbers by pushing to right side.
             input y get x get
             1 string dup 0 4 -1 roll put
             current_number exch push_number_token /current_number exch def
@@ -206,22 +207,23 @@
          {
             current_number 0 ne
             {
-               workarray current_number append /workarray exch def
+               workarray current_number append /workarray exch def   % Add finished number to work array.
             } if
+
             /current_number 0 def
 
             input y get x get
             dup
-            32 ne
+            32 ne    % 32 = " "
             {
-               43 eq  % +
-               {
+               43 eq  
+               {  % +
                   workarray aload pop
                   workarray length
                   add_n
                   /vertical_puzzle_sum exch vertical_puzzle_sum add def
                }
-               {   % *
+               {  % *
                   workarray aload pop
                   workarray length
                   mul_n
