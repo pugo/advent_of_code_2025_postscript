@@ -3,7 +3,7 @@
 %%Title: Advent of Code 2025 - day 7
 %%For: Hackvalue
 %%Creator: Anders Piniesjö
-%%CreationDate: Mon Dec 13 01:18:41 2025
+%%CreationDate: Mon Dec 13 22:47:41 2025
 %%Orientation: Portrait
 %%DocumentMedia: A4 595 842 0 () ()
 %%EndComments
@@ -18,25 +18,6 @@
 % -----------------------------------------------------------------------
 
 %% ----- Data -------
-
-/demo_data [
-(.......S.......)
-(...............)
-(.......^.......)
-(...............)
-(......^.^......)
-(...............)
-(.....^.^.^.....)
-(...............)
-(....^.^...^....)
-(...............)
-(...^.^...^.^...)
-(...............)
-(..^...^.....^..)
-(...............)
-(.^.^.^.^.^...^.)
-(...............)
-] bind def
 
 /input_data [
 % <<INJECT DATA HERE>>
@@ -203,7 +184,6 @@
       { oa z 1 put }
       { oa z 0 put } ifelse
    } for
-   oa ==
    oa
 } bind def
 
@@ -239,14 +219,20 @@
 
          dup cDot eq
          {
-%            new_count 2 index
-%            new_count 4 index get
-%            count_array 5 index get add put
+            new_count qx 
+            new_count qx get
+            count_array qx get add put
          }
          {
             dup cSplit eq
             {
-               (split ) ==
+               new_count qx 1 sub
+               new_count qx 1 sub get
+               count_array qx get add put
+
+               new_count qx 1 add
+               new_count qx 1 add get
+               count_array qx get add put
             }
             {
             } ifelse
@@ -254,9 +240,13 @@
          pop
 
       } for
-      count_array ==
+      /count_array new_count def
    } for
 
+   0 count_array
+   {
+      add
+   } forall
 } bind def
 
 
@@ -270,18 +260,17 @@ input_data deep_copy_stringarray /step2_data exch def
 step1_data beam /result_step_1 exch def
 
 step1_data { println } forall
-%step2_data { println } forall
 
-demo_data quantum_beam =
+step2_data quantum_beam /step_2_answer exch def
 
 % Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 7 -) prtstr 1 1 6 { pop newline } for
 setbold (Sum step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
-%setbold (Sum step 2: ) prtstr setnormal step_2_answer 100 string cvs prtstr newline
+setbold (Sum step 2: ) prtstr setnormal step_2_answer 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 7 - Anders Piniesjö\n) println 
 (Sum step 1: ) print result_step_1 20 string cvs println
-%(Sum step 2: ) print step_2_answer 20 string cvs println
+(Sum step 2: ) print step_2_answer 20 string cvs println
