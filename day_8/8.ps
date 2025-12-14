@@ -41,7 +41,7 @@
 [984 92 344]
 [425 690 689]
 ] bind def
-
+ 
 /input_data [
 % <<INJECT DATA HERE>>
 ] bind def
@@ -129,7 +129,8 @@
 
 /dl:init
 {
-   /dl:list 10000 array def
+   /dl:list 1000 array def
+   /dl:max dl:list length 1 sub def
    /dl:index 0 def
 } bind def
 
@@ -139,19 +140,18 @@
    dl:list dl:index 3 -1 roll put   
 
    % Move into sorted position.
-   dl:index 1 gt
+   dl:index 0 gt
    {
-      dl:index 1 sub -1 1
+      dl:index -1 1
       {
-         /i exch def
-         /a dl:list i 1 sub get def
-         /b dl:list i get def
-         a == b ==
+         /dl:i exch def
+         /a dl:list dl:i 1 sub get def
+         /b dl:list dl:i get def
 
          a 0 get b 0 get gt
          {
-            dl:list i 1 sub b put
-            dl:list i a put
+            dl:list dl:i 1 sub b put
+            dl:list dl:i a put
          }
          {
             exit
@@ -159,14 +159,10 @@
       } for
    } if
 
-   /dl:index dl:index 1 add def
-} bind def
-
-/dl:trim
-{
-   /newlist dl:index array def
-   newlist 0 dl:list 0 dl:index getinterval putinterval
-   /dl:list newlist def
+   dl:index dl:max lt
+   { 
+      /dl:index dl:index 1 add def  % Increase index if not reached max.
+   } if
 } bind def
 
 
@@ -192,20 +188,24 @@
          a 1 get b 1 get sub dup mul add
          a 2 get b 2 get sub dup mul add def
 
-         i 10 string cvs print (, ) print j 10 string cvs print (, ) print d 20 string cvs println
+         % i 10 string cvs print (, ) print j 10 string cvs print (, ) print d 20 string cvs println
          [d i j a b] dl:put
       } for
    } for
 
-   dl:trim 
-   dl:list ==
+   % dl:list ==
 } bind def
 
 %% ------------------------------
 
 setup_output
 
-test_data meassure_pairs
+input_data meassure_pairs
+
+dl:list
+{
+   ==
+} forall
 
 
 % Output to paper

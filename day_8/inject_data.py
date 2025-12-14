@@ -11,13 +11,22 @@ class Injector(data_injector.DataInjector):
         self._add_dataset('numbers', lines)
 
     def generate_data(self) -> str:
+        items_per_line = 8
         lines = []
+        line = []        
 
-        for line in self._datasets['numbers']:
-            lines.append(f'({line})')
+        for position in self._datasets['numbers']:
+            line.append(f'[{' '.join(position.split(','))}]')
+
+            if len(line) == items_per_line:
+                lines.append(' '.join(line))
+                line = []
+
+        if line:
+            lines.append(' '.join(line))
 
         return '\n'.join(lines)
-
+    
     TAG_INJECTORS = {
         '<<INJECT DATA HERE>>': generate_data,
     }
