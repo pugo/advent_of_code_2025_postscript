@@ -124,21 +124,59 @@
    new
 } bind def
 
-%% ------------------------------
 
-/distancelist:init
+%% --- distance list ----------
+
+/dl:init
 {
-   /distancelist:list 1000 array def
-   /distancelist:index 0 def
+   /dl:list 10000 array def
+   /dl:index 0 def
+} bind def
+
+/dl:put %% any --     | Put item to distlist
+{
+   % Put new element at end.
+   dl:list dl:index 3 -1 roll put   
+
+   % Move into sorted position.
+   dl:index 1 gt
+   {
+      dl:index 1 sub -1 1
+      {
+         /i exch def
+         /a dl:list i 1 sub get def
+         /b dl:list i get def
+         a == b ==
+
+         a 0 get b 0 get gt
+         {
+            dl:list i 1 sub b put
+            dl:list i a put
+         }
+         {
+            exit
+         } ifelse
+      } for
+   } if
+
+   /dl:index dl:index 1 add def
+} bind def
+
+/dl:trim
+{
+   /newlist dl:index array def
+   newlist 0 dl:list 0 dl:index getinterval putinterval
+   /dl:list newlist def
 } bind def
 
 
+%% ------------------------------
 
 /meassure_pairs  % array
 {
    /input exch def
    /len input length def
-   distancelist:init
+   dl:init
 
    0 1 len 2 sub
    {
@@ -149,24 +187,18 @@
          /j exch def
          /a input i get def
          /b input j get def
-         a == b ==
          /d 
-         a 0 get b 0 get sub 2 exp
-         a 1 get b 1 get sub 2 exp add
-         a 2 get b 2 get sub 2 exp add def
+         a 0 get b 0 get sub dup mul
+         a 1 get b 1 get sub dup mul add
+         a 2 get b 2 get sub dup mul add def
 
-         distlist distlist_index [d i j a b] put
-         /distlist_index distlist_index 1 add def
          i 10 string cvs print (, ) print j 10 string cvs print (, ) print d 20 string cvs println
+         [d i j a b] dl:put
       } for
    } for
 
-   /newlist distlist_index array def
-   newlist 0 distlist 0 distlist_index getinterval putinterval
-
-   newlist ==
-
-
+   dl:trim 
+   dl:list ==
 } bind def
 
 %% ------------------------------
