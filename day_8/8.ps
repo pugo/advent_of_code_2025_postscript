@@ -1,0 +1,189 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 24 24 571 818
+%%Title: Advent of Code 2025 - day 8
+%%For: Hackvalue
+%%Creator: Anders Piniesjö
+%%CreationDate: Mon Dec 13 22:47:41 2025
+%%Orientation: Portrait
+%%DocumentMedia: A4 595 842 0 () ()
+%%EndComments
+
+% -----------------------------------------------------------------------
+%  Advent of Code 2025 in Postscript - Day 8
+%  by Anders Piniesjö
+%
+%  Run with: ghostscript 8.ps
+%  
+%  -- Or print it on a Postscript printer!
+% -----------------------------------------------------------------------
+
+%% ----- Data -------
+
+/test_data [
+[162 817 812]
+[57 618 57]
+[906 360 560]
+[592 479 940]
+[352 342 300]
+[466 668 158]
+[542 29 236]
+[431 825 988]
+[739 650 466]
+[52 470 668]
+[216 146 977]
+[819 987 18]
+[117 168 530]
+[805 96 715]
+[346 949 466]
+[970 615 88]
+[941 993 340]
+[862 61 35]
+[984 92 344]
+[425 690 689]
+] bind def
+
+/input_data [
+% <<INJECT DATA HERE>>
+] bind def
+
+%% ----- Output -------
+
+/setup_output
+{
+   /stdout (%stdout) (w) file def
+   /print { stdout exch writestring } bind def
+   /println { print stdout (\n) writestring } bind def
+
+   /LM   50 def      % Left margin
+   /RM   578 def     % Right margin
+   /TM   700 def     % Top margin
+   /BM   10 def      % Bottom margin
+   /fontsize 18 def  % Change this to change font-size
+   /ypos TM def      % current y-position
+   /lineheight fontsize def
+
+   /font_normal /Times-Roman findfont fontsize scalefont def
+   /font_bold /Times-Bold findfont fontsize scalefont def
+   font_normal setfont
+} def
+
+/newline
+ { currentpoint exch pop lineheight sub  % calc y-val
+   BM lt                                 % check if less than bottom margin
+   { showpage LM TM moveto               % New page
+     /ypos TM def }
+   { ypos lineheight sub                 % Go left/down
+     /ypos exch def
+     LM ypos moveto } ifelse
+} def
+   
+/prtstr
+ { dup stringwidth pop      % calc length of string
+   currentpoint pop         % get horizontal position
+   add RM gt                % sum > right margin?
+   {newline} if             % if so, next line
+   show 
+} def
+
+/setnormal { font_normal setfont } bind def
+/setbold { font_bold setfont } bind def
+
+%% ---- Utils ------
+
+/max  %% int int -- int   | Return max of two ints
+{
+   2 copy lt { exch pop } { pop } ifelse
+} bind def
+
+/append   %% array elem -- array with elem   | Append elem to array, returning a new array with result.
+{
+   1 index length dup 1 add array   % Create new larger array.
+   dup 0 6 -1 roll putinterval      % Copy old array into new.
+   dup 4 -2 roll                    % Duplicate array and stack roll.
+   exch put                         % Put element to end.
+} bind def
+
+/deep_copy_stringarray  %% array -- array   | Deep copy an array of strings.
+{
+   /old exch def
+   /new old length array def
+
+   0 1 old length 1 sub
+   {                       % i
+      dup old exch get     % i str
+      dup length string    % i str newstr
+      0 3 -1 roll          % i newstr 0 str
+      dup length 0 exch    % i newstr 0 str 0 slen
+      getinterval          % i newstr 0 str
+      2 index              % i newstr 0 str newstr
+      5 1 roll             % newstr i newstr 0 str
+      putinterval          % newstr i
+      new exch 3 -1 roll   % new i 
+      put    
+   } for
+   new
+} bind def
+
+%% ------------------------------
+
+/distancelist:init
+{
+   /distancelist:list 1000 array def
+   /distancelist:index 0 def
+} bind def
+
+
+
+/meassure_pairs  % array
+{
+   /input exch def
+   /len input length def
+   distancelist:init
+
+   0 1 len 2 sub
+   {
+      /i exch def
+
+      i 1 add 1 len 1 sub
+      {
+         /j exch def
+         /a input i get def
+         /b input j get def
+         a == b ==
+         /d 
+         a 0 get b 0 get sub 2 exp
+         a 1 get b 1 get sub 2 exp add
+         a 2 get b 2 get sub 2 exp add def
+
+         distlist distlist_index [d i j a b] put
+         /distlist_index distlist_index 1 add def
+         i 10 string cvs print (, ) print j 10 string cvs print (, ) print d 20 string cvs println
+      } for
+   } for
+
+   /newlist distlist_index array def
+   newlist 0 distlist 0 distlist_index getinterval putinterval
+
+   newlist ==
+
+
+} bind def
+
+%% ------------------------------
+
+setup_output
+
+test_data meassure_pairs
+
+
+% Output to paper
+LM TM moveto
+setbold (Advent of Code 2025) prtstr setnormal newline newline
+(- Day 8 -) prtstr 1 1 6 { pop newline } for
+%setbold (Sum step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
+%setbold (Sum step 2: ) prtstr setnormal step_2_answer 100 string cvs prtstr newline
+
+% Write to stdout as well
+(\nAdvent of Code 2025  - Day 8 - Anders Piniesjö\n) println 
+%(Sum step 1: ) print result_step_1 20 string cvs println
+%(Sum step 2: ) print step_2_answer 20 string cvs println
