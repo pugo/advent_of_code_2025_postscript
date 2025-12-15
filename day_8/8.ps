@@ -124,12 +124,44 @@
    new
 } bind def
 
+/sort_array_sweep
+{
+   /s:swapcount 0 def
+   dup length 2 sub
+   0 1 3 -1 roll
+   {
+      /s:i exch def
+      dup /s:a exch s:i get def
+      dup /s:b exch s:i 1 add get def
+
+      s:a null eq { /s:a 0 def } if
+      s:b null eq { /s:b 0 def } if
+
+      s:a s:b gt
+      {
+         dup s:i s:b put
+         dup s:i 1 add s:a put
+         /s:swapcount s:swapcount 1 add def
+      } if
+   } for
+   pop  % pop array
+   s:swapcount
+} def
+
+/sort_array  %% Array --  | Sorts the array with numbers
+{
+   /target exch def
+   {
+      target sort_array_sweep
+      0 eq { exit } if
+   } loop
+} bind def
 
 %% --- distance list ----------
 
 /dl:init
 {
-   /dl:list 1000 array def
+   /dl:list 1010 array def
    /dl:max dl:list length 1 sub def
    /dl:index 0 def
 } bind def
@@ -165,6 +197,113 @@
    } if
 } bind def
 
+%% --- circuit dict ----------
+
+/c:init
+{
+   /c:dict 2000 dict def
+   /c:next_group_nr 1 def
+} bind def
+
+/c:put  %% connection-array --    | Add a connection to circuit dict
+{
+   /c:ca exch def
+   /c:a c:ca 1 get def
+   /c:b c:ca 2 get def
+
+   /c:aknown c:dict c:a known def
+   /c:bknown c:dict c:b known def
+
+   c:aknown c:bknown or
+   {
+      c:aknown c:bknown and
+      {
+         % Both are in circuit, check if it is same.
+         c:dict c:a get
+         c:dict c:b get eq
+         {
+            % They are both in same circuit already. Do nothing more.
+         }
+         {
+            % They are in different circuits. Merge them.
+            /c:change_from c:dict c:b get def
+            /c:change_to c:dict c:a get def
+            c:dict
+            {
+               c:change_from eq
+               {
+                  c:dict exch c:change_to put
+               }
+               {
+                  pop
+               } ifelse
+            } forall
+
+         } ifelse
+      }
+      {
+         % One is in circuit, add the other to the same one.
+         c:aknown
+         {
+            % Add B to same circuit as A.
+            c:dict c:a get
+            c:dict c:b 3 -1 roll put
+         }
+         {
+            % Add A to same circuit as B.
+            c:dict c:b get
+            c:dict c:a 3 -1 roll put
+         } ifelse
+      } ifelse
+   } 
+   {
+      % None of them are in circuit, add both to new one.
+      c:new_group_nr dup
+      c:dict c:a 3 -1 roll put
+      c:dict c:b 3 -1 roll put
+   } ifelse
+
+} bind def
+
+/c:new_group_nr
+{
+   /c:result c:next_group_nr def
+   /c:next_group_nr c:next_group_nr 1 add def
+   c:result
+} bind def
+
+/c:sum_largest_circuit_sizes  %% n - int  | Sum the n largest circuit sizes and return sum.
+{
+   /c:n exch def
+
+   /c:largest_nr 0 def
+   c:dict { /c:largest_nr exch c:largest_nr max def pop } forall  % Get largest group number.
+
+   /c:sum_array c:largest_nr 1 add array  def
+
+   c:dict 
+   {
+      exch pop
+      dup c:sum_array exch get null eq
+      { c:sum_array exch 1 put }
+      { dup c:sum_array exch get 1 add c:sum_array 3 -2 roll put } 
+      ifelse
+   } forall
+
+   c:sum_array sort_array
+   c:sum_array ==
+
+   /c:sum 1 def
+   /c:last c:sum_array length 1 sub def
+   c:last -1 c:last c:n sub 1 add
+   {
+      c:sum_array exch get
+      /c:sum exch c:sum mul def
+   } for
+
+   c:sum
+} bind def
+
 
 %% ------------------------------
 
@@ -196,26 +335,48 @@
    % dl:list ==
 } bind def
 
+/connect    %% n --    | Connect n shortest pairs.
+{
+   /cn exch def
+   c:init
+
+   0 1 cn 1 sub
+   {
+      dl:list exch get c:put
+   } for
+} bind def
+
+
 %% ------------------------------
 
 setup_output
 
 input_data meassure_pairs
+%test_data meassure_pairs
 
-dl:list
-{
-   ==
-} forall
+% dl:list
+% {
+%    ==
+% } forall
+% () println
 
+1000 connect
+3 c:sum_largest_circuit_sizes /result_step_1 exch def
+
+% c:dict
+% {
+%    exch 
+%    (index: ) print 10 string cvs print (, group: ) print 10 string cvs println
+% } forall
 
 % Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 8 -) prtstr 1 1 6 { pop newline } for
-%setbold (Sum step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
+setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
 %setbold (Sum step 2: ) prtstr setnormal step_2_answer 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 8 - Anders Piniesjö\n) println 
-%(Sum step 1: ) print result_step_1 20 string cvs println
+(Result step 1: ) print result_step_1 20 string cvs println
 %(Sum step 2: ) print step_2_answer 20 string cvs println
