@@ -19,29 +19,6 @@
 
 %% ----- Data -------
 
-/test_data [
-[162 817 812]
-[57 618 57]
-[906 360 560]
-[592 479 940]
-[352 342 300]
-[466 668 158]
-[542 29 236]
-[431 825 988]
-[739 650 466]
-[52 470 668]
-[216 146 977]
-[819 987 18]
-[117 168 530]
-[805 96 715]
-[346 949 466]
-[970 615 88]
-[941 993 340]
-[862 61 35]
-[984 92 344]
-[425 690 689]
-] bind def
- 
 /input_data [
 % <<INJECT DATA HERE>>
 ] bind def
@@ -161,7 +138,7 @@
 
 /dl:init
 {
-   /dl:list 1010 array def
+   /dl:list 7000 array def
    /dl:max dl:list length 1 sub def
    /dl:index 0 def
 } bind def
@@ -201,8 +178,12 @@
 
 /c:init
 {
-   /c:dict 2000 dict def
+   /c:components exch def
+   /c:dict c:components dict def
    /c:next_group_nr 1 def
+
+   % Unumerate all key/value pairs to "dict[n] = n".
+   0 1 c:components 1 sub { c:dict exch dup put } for
 } bind def
 
 /c:put  %% connection-array --    | Add a connection to circuit dict
@@ -211,68 +192,47 @@
    /c:a c:ca 1 get def
    /c:b c:ca 2 get def
 
-   /c:aknown c:dict c:a known def
-   /c:bknown c:dict c:b known def
+   /c:aval c:dict c:a get def
+   /c:bval c:dict c:b get def
 
-   c:aknown c:bknown or
+   c:aval c:bval eq
    {
-      c:aknown c:bknown and
-      {
-         % Both are in circuit, check if it is same.
-         c:dict c:a get
-         c:dict c:b get eq
-         {
-            % They are both in same circuit already. Do nothing more.
-         }
-         {
-            % They are in different circuits. Merge them.
-            /c:change_from c:dict c:b get def
-            /c:change_to c:dict c:a get def
-            c:dict
-            {
-               c:change_from eq
-               {
-                  c:dict exch c:change_to put
-               }
-               {
-                  pop
-               } ifelse
-            } forall
+      % They are both in same circuit already. Do nothing more.
+   }
+   {
+      % They are in different circuits. Merge them.
+      c:aval c:bval lt
+      { c:bval c:aval c:merge }
+      { c:aval c:bval c:merge } ifelse
+      /c:components c:components 1 sub def
+   } ifelse
+} bind def
 
-         } ifelse
+/c:merge
+{
+   /c:to exch def
+   /c:from exch def
+   /c:to_update 0 array def
+
+   c:dict 
+   {
+      c:from eq
+      {
+         c:to_update exch append
+         /c:to_update exch def
       }
       {
-         % One is in circuit, add the other to the same one.
-         c:aknown
-         {
-            % Add B to same circuit as A.
-            c:dict c:a get
-            c:dict c:b 3 -1 roll put
-         }
-         {
-            % Add A to same circuit as B.
-            c:dict c:b get
-            c:dict c:a 3 -1 roll put
-         } ifelse
+         pop
       } ifelse
-   } 
+   } forall
+
+   c:to_update 
    {
-      % None of them are in circuit, add both to new one.
-      c:new_group_nr dup
-      c:dict c:a 3 -1 roll put
-      c:dict c:b 3 -1 roll put
-   } ifelse
-
+      c:dict exch c:to put
+   } forall
 } bind def
 
-/c:new_group_nr
-{
-   /c:result c:next_group_nr def
-   /c:next_group_nr c:next_group_nr 1 add def
-   c:result
-} bind def
-
-/c:sum_largest_circuit_sizes  %% n - int  | Sum the n largest circuit sizes and return sum.
+/c:mul_largest_circuit_sizes  %% n - int  | Sum the n largest circuit sizes and return sum.
 {
    /c:n exch def
 
@@ -335,10 +295,12 @@
    % dl:list ==
 } bind def
 
-/connect    %% n --    | Connect n shortest pairs.
+
+/connect_n    %% input n --    | Connect n shortest pairs.
 {
    /cn exch def
-   c:init
+   /input exch def
+   input length c:init
 
    0 1 cn 1 sub
    {
@@ -347,21 +309,39 @@
 } bind def
 
 
+/connect_all    %%  --    | Connect all.
+{
+   /input exch def
+   /cresult 0 def
+   input length c:init
+
+   /cindex 0 def
+   {
+      dl:list cindex get c:put
+      c:components 1 eq
+      {
+         dl:list cindex get
+         dup 3 get 0 get exch 4 get 0 get mul
+         /cresult exch def
+
+         exit
+      } if
+      /cindex cindex 1 add def
+   } loop
+
+   cresult
+} bind def
+
 %% ------------------------------
 
 setup_output
 
 input_data meassure_pairs
-%test_data meassure_pairs
 
-% dl:list
-% {
-%    ==
-% } forall
-% () println
+input_data 1000 connect_n 
+3 c:mul_largest_circuit_sizes /result_step_1 exch def
 
-1000 connect
-3 c:sum_largest_circuit_sizes /result_step_1 exch def
+input_data connect_all /result_step_2 exch def 
 
 % c:dict
 % {
@@ -374,9 +354,9 @@ LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 8 -) prtstr 1 1 6 { pop newline } for
 setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
-%setbold (Sum step 2: ) prtstr setnormal step_2_answer 100 string cvs prtstr newline
+setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 8 - Anders Piniesjö\n) println 
 (Result step 1: ) print result_step_1 20 string cvs println
-%(Sum step 2: ) print step_2_answer 20 string cvs println
+(Result step 2: ) print result_step_2 20 string cvs println
