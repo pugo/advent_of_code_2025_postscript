@@ -1,0 +1,169 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 24 24 571 818
+%%Title: Advent of Code 2025 - day 9
+%%For: Hackvalue
+%%Creator: Anders Piniesjö
+%%CreationDate: Mon Dec 13 22:47:41 2025
+%%Orientation: Portrait
+%%DocumentMedia: A4 595 842 0 () ()
+%%EndComments
+
+% -----------------------------------------------------------------------
+%  Advent of Code 2025 in Postscript - Day 9
+%  by Anders Piniesjö
+%
+%  Run with: ghostscript 9.ps
+%  
+%  -- Or print it on a Postscript printer!
+% -----------------------------------------------------------------------
+
+%% ----- Data -------
+
+/test_data [
+[7 1]
+[11 1]
+[11 7]
+[9 7]
+[9 5]
+[2 5]
+[2 3]
+[7 3]
+] bind def
+
+
+
+/input_data [
+% <<INJECT DATA HERE>>
+] bind def
+
+%% ----- Output -------
+
+/setup_output
+{
+   /stdout (%stdout) (w) file def
+   /print { stdout exch writestring } bind def
+   /println { print stdout (\n) writestring } bind def
+
+   /LM   50 def      % Left margin
+   /RM   578 def     % Right margin
+   /TM   700 def     % Top margin
+   /BM   10 def      % Bottom margin
+   /fontsize 18 def  % Change this to change font-size
+   /ypos TM def      % current y-position
+   /lineheight fontsize def
+
+   /font_normal /Times-Roman findfont fontsize scalefont def
+   /font_bold /Times-Bold findfont fontsize scalefont def
+   font_normal setfont
+} def
+
+/newline
+ { currentpoint exch pop lineheight sub  % calc y-val
+   BM lt                                 % check if less than bottom margin
+   { showpage LM TM moveto               % New page
+     /ypos TM def }
+   { ypos lineheight sub                 % Go left/down
+     /ypos exch def
+     LM ypos moveto } ifelse
+} def
+   
+/prtstr
+ { dup stringwidth pop      % calc length of string
+   currentpoint pop         % get horizontal position
+   add RM gt                % sum > right margin?
+   {newline} if             % if so, next line
+   show 
+} def
+
+/setnormal { font_normal setfont } bind def
+/setbold { font_bold setfont } bind def
+
+%% ---- Utils ------
+
+/max  %% int int -- int   | Return max of two ints
+{
+   2 copy lt { exch pop } { pop } ifelse
+} bind def
+
+/append   %% array elem -- array with elem   | Append elem to array, returning a new array with result.
+{
+   1 index length dup 1 add array   % Create new larger array.
+   dup 0 6 -1 roll putinterval      % Copy old array into new.
+   dup 4 -2 roll                    % Duplicate array and stack roll.
+   exch put                         % Put element to end.
+} bind def
+
+/deep_copy_stringarray  %% array -- array   | Deep copy an array of strings.
+{
+   /old exch def
+   /new old length array def
+
+   0 1 old length 1 sub
+   {                       % i
+      dup old exch get     % i str
+      dup length string    % i str newstr
+      0 3 -1 roll          % i newstr 0 str
+      dup length 0 exch    % i newstr 0 str 0 slen
+      getinterval          % i newstr 0 str
+      2 index              % i newstr 0 str newstr
+      5 1 roll             % newstr i newstr 0 str
+      putinterval          % newstr i
+      new exch 3 -1 roll   % new i 
+      put    
+   } for
+   new
+} bind def
+
+/sort_array_sweep
+{
+   /s:swapcount 0 def
+   dup length 2 sub
+   0 1 3 -1 roll
+   {
+      /s:i exch def
+      dup /s:a exch s:i get def
+      dup /s:b exch s:i 1 add get def
+
+      s:a null eq { /s:a 0 def } if
+      s:b null eq { /s:b 0 def } if
+
+      s:a s:b gt
+      {
+         dup s:i s:b put
+         dup s:i 1 add s:a put
+         /s:swapcount s:swapcount 1 add def
+      } if
+   } for
+   pop  % pop array
+   s:swapcount
+} def
+
+/sort_array  %% Array --  | Sorts the array with numbers
+{
+   /target exch def
+   {
+      target sort_array_sweep
+      0 eq { exit } if
+   } loop
+} bind def
+
+%% ------------------------------
+
+%% ------------------------------
+
+setup_output
+
+%input_data meassure_pairs
+
+
+% Output to paper
+LM TM moveto
+setbold (Advent of Code 2025) prtstr setnormal newline newline
+(- Day 9 -) prtstr 1 1 6 { pop newline } for
+% setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
+% setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
+
+% Write to stdout as well
+(\nAdvent of Code 2025  - Day 9 - Anders Piniesjö\n) println 
+% (Result step 1: ) print result_step_1 20 string cvs println
+% (Result step 2: ) print result_step_2 20 string cvs println
