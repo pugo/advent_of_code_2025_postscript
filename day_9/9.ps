@@ -31,7 +31,6 @@
 ] bind def
 
 
-
 /input_data [
 % <<INJECT DATA HERE>>
 ] bind def
@@ -149,9 +148,37 @@
 
 %% ------------------------------
 
+/largest_square
+{
+   /input exch def
+   /len input length def
+   /current_max 0 def
+
+   0 1 len 2 sub
+   {
+      /i exch def
+
+      i 1 add 1 len 1 sub
+      {
+         /j exch def
+
+         /a input i get def
+         /b input j get def
+
+         a 0 get b 0 get sub abs 1 add 
+         a 1 get b 1 get sub abs 1 add mul
+         /current_max exch current_max max def
+      } for
+   } for
+   current_max
+} bind def
+
+
 %% ------------------------------
 
 setup_output
+
+input_data largest_square /result_step_1 exch def
 
 %input_data meassure_pairs
 
@@ -160,10 +187,10 @@ setup_output
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 9 -) prtstr 1 1 6 { pop newline } for
-% setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
+setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
 % setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 9 - Anders Piniesjö\n) println 
-% (Result step 1: ) print result_step_1 20 string cvs println
+(Result step 1: ) print result_step_1 20 string cvs println
 % (Result step 2: ) print result_step_2 20 string cvs println

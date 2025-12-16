@@ -16,7 +16,8 @@ class Injector(data_injector.DataInjector):
         line = []        
 
         for position in self._datasets['numbers']:
-            line.append(f'[{' '.join(position.split(','))}]')
+            ps = ' '.join(position.split(','))
+            line.append(f'[{ps}]')
 
             if len(line) == items_per_line:
                 lines.append(' '.join(line))
