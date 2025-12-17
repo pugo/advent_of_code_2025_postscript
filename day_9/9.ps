@@ -79,6 +79,11 @@
 
 %% ---- Utils ------
 
+/min  %% int int -- int   | Return min of two ints
+{
+   2 copy gt { exch pop } { pop } ifelse
+} bind def
+
 /max  %% int int -- int   | Return max of two ints
 {
    2 copy lt { exch pop } { pop } ifelse
@@ -146,6 +151,48 @@
    } loop
 } bind def
 
+%% --- Polygon ----------
+
+/p:init
+{
+   /p:verticals [] def
+} bind def
+
+/p:find_verticals
+{
+   /p:data exch def
+   /p:len p:data length def
+
+   /p:start 0 def
+   p:data 0 get 0 get p:data 1 get 0 get ne
+   {
+      % First two x coordintates not equal. Start on second number to get verticals.
+      /p:start 1 def
+   } if
+
+   /p:end p:start p:len add 1 sub def
+
+   p:start 2 p:end
+   {
+      dup
+      p:data exch get /p:a exch def 
+      p:data exch 1 add p:len mod get /p:b exch def
+
+      p:a 0 get         % Get x
+      p:a 1 get         % Get y1
+      p:b 1 get         % Fet y2
+      2 copy min        % Find min of y1 and y2
+      3 1 roll max      % Find max of y1 and y2
+      3 array astore    % Make array [x y1 y2]
+
+      p:verticals exch append /p:verticals exch def
+   } for
+
+
+
+} bind def
+
+
 %% ------------------------------
 
 /largest_square
@@ -179,6 +226,11 @@
 setup_output
 
 input_data largest_square /result_step_1 exch def
+
+p:init
+
+% test_data p:find_verticals
+input_data p:find_verticals
 
 %input_data meassure_pairs
 
