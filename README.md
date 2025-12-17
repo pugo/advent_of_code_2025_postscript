@@ -26,6 +26,11 @@ During development and for reasonable execution I use
 the fantastic Ghostscript. The Ghostscript developers have
 provided us a free PostScript intepreter since 1988!
 
+## Running
+The data input files (`input.txt`) are personal and not included
+in this repository. To run a task, place your own `input.txt` in
+respective directory and run `make run`.
+
 ## What is Postscript?
 [PostScript (PS)](https://en.wikipedia.org/wiki/PostScript) is a Turing complete page description language
 invented by Adobe. It was introduced in 1982. The most recent
