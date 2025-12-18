@@ -96,7 +96,7 @@
       /i i 1 add def
    } forall
    exch pop
-} def
+} bind def
 
 /make_array  % data -- array (of arrays)
 {
@@ -108,15 +108,13 @@
 
    0 1 h 1 sub
    {
-      /j exch def
-      /l input j get def
-      l make_line
-      
-      result exch j exch put
+      dup 
+      input exch get make_line
+      result 3 1 roll put
    } for
 
    result
-} def
+} bind def
 
 
 /count_neighbours  % grid y x -- count  | Count all neighbours with rolls
@@ -181,21 +179,17 @@
                /total_count total_count 1 add def
                grid y get x 2 put 
             } if
-
          } if
-
       } for
    } for
 
    total_count
-} def
+} bind def
 
 /printgrid
 {
-   {
-      ==
-   } forall
-} def
+   { == } forall
+} bind def
 
 /remove_cells  %% grid --    | Remove cells marked for removal (2).  
 {
@@ -215,10 +209,9 @@
          {
             grid y get x 0 put
          } if
-
       } for
    } for
-} def
+} bind def
 
 %% ------------------------------
 

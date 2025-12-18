@@ -83,45 +83,18 @@
 {
    /input exch def
    input length /len exch def
-
    /result len array def
 
    0 1 len 1 sub
    {
-      /i exch def
-
-      input i get (-) search
+      dup input exch get (-) search
       {
          exch pop           % Skip (-)
          cvi exch cvi       % Both to int  
          2 array astore     % Array with range [start stop]
       } if
-      
-      result exch i exch put
-   } for
 
-   result
-} bind def
-
-/make_ingredients_array  % data -- array   | Make array with ranges [A B] from array of strings (A-B)
-{
-   /input exch def
-   input length /len exch def
-
-   /result len array def
-
-   0 1 len 1 sub
-   {
-      /i exch def
-
-      input i get (-) search
-      {
-         exch pop           % Skip (-)
-         cvi exch cvi       % Both to int  
-         2 array astore     % Array with range [start stop]
-      } if
-      
-      result exch i exch put
+      result 3 1 roll put
    } for
 
    result
@@ -195,8 +168,7 @@
 
    1 1 len 1 sub
    {
-      /i exch def
-      /next sorted_array i get def
+      /next sorted_array 3 -1 roll get def
 
       next 0 get current 1 get 1 add le   % +1 to current end to merge adjacent.
       {

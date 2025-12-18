@@ -81,17 +81,9 @@
    dup length is_even 
    {
       dup /plen exch length 2 idiv def             % store half strlength
-      dup 0 plen getinterval /str_start exch def   % store first half
-      dup plen plen getinterval /str_end exch def  % store second half
-
-      str_start str_end eq 
-      {
-         pop
-         dup /sum_invalid exch sum_invalid add def
-      }
-      {
-         pop
-      } ifelse
+      dup 0 plen getinterval exch                  % get first half
+      plen plen getinterval                        % get second half
+      eq { dup /sum_invalid exch sum_invalid add def } if
    }
    {
       pop
@@ -106,16 +98,14 @@
 
    ranges
    {
-      /pair exch def
-      pair 0 get /start exch def
-      pair 1 get /end exch def
-
-      start 1 end 
+      aload pop 1 exch
       { 
          check_number
       } for
    } forall
-} def
+
+   sum_invalid
+} bind def
 
 %% ----- step 2 -------
 
@@ -133,11 +123,8 @@
       {
          /unitlen exch def
 
-         slen unitlen mod 0 ne 
-         {
-            % slen not dividable by unitlen
-         }
-         {
+         slen unitlen mod 0 eq 
+         {  % slen dividable by unitlen
             str 0 unitlen getinterval /unit exch def
             
             /ok true def
@@ -158,9 +145,8 @@
             ok 
             {
                /res true def
-               %stdout str writestring stdout (\n) writestring
             } if
-         } ifelse
+         } if
       } for
    } if
 
@@ -169,40 +155,37 @@
 
 /handle_ranges_step_2
 {
-   /sum_invalid_step_2 0 def
+   /sum_invalid 0 def
 
    ranges
    {
-      /pair exch def
-      pair 0 get /start exch def
-      pair 1 get /end exch def
-
-      start 1 end 
+      aload pop 1 exch
       {  % for  <int>
          dup check_number_step_2
          {
-            /sum_invalid_step_2 exch sum_invalid_step_2 add def
+            /sum_invalid exch sum_invalid add def
          }
          {
             pop
          } ifelse
       } for
    } forall
+   sum_invalid
 } def
 
 %% ------------------------------
 
 setup_output
-handle_ranges_step_1
-handle_ranges_step_2
+handle_ranges_step_1 /sum_invalid_step_1 exch def
+handle_ranges_step_2 /sum_invalid_step_2 exch def
 
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 2 -) prtstr 1 1 6 { pop newline } for
-setbold (Result Step 1: ) prtstr setnormal sum_invalid 100 string cvs prtstr newline newline
+setbold (Result Step 1: ) prtstr setnormal sum_invalid_step_1 100 string cvs prtstr newline newline
 setbold (Result Step 2: ) prtstr setnormal sum_invalid_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 2 - Anders Piniesjö\n) println 
-(Step 1: ) print sum_invalid 20 string cvs println
+(Step 1: ) print sum_invalid_step_1 20 string cvs println
 (Step 2: ) print sum_invalid_step_2 20 string cvs println

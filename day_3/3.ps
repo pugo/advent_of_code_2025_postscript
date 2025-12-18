@@ -89,19 +89,19 @@
 
 /sweep_bank   % bank start end  -- highest highest_index
 {
-   /end exch def
-   /start exch def
-   /bank exch def
-   /highest 0 def
-   /highest_index 0 def
+   /s:end exch def
+   /s:start exch def
+   /s:bank exch def
+   /s:highest 0 def
+   /s:highest_index 0 def
 
-   start 1 end
+   s:start 1 s:end
    {
-      dup bank exch char_at cvi   % Get number at pos, converted to int  - stack: index num
-      dup highest gt { dup /highest exch def 1 index /highest_index exch def } if
+      dup s:bank exch char_at cvi   % Get number at pos, converted to int  - stack: index num
+      dup s:highest gt { dup /s:highest exch def 1 index /s:highest_index exch def } if
       pop pop
    } for
-   highest highest_index
+   s:highest s:highest_index
 } def
 
 /maximize_bank  % str joltlen -- highest
@@ -116,11 +116,9 @@
    {
       /k exch def
       bank i bank length k sub sweep_bank
-      /i exch def
-      /m exch def
-      /i i 1 add def
+      /i exch 1 add def
 
-      banksum joltlen k sub m 1 string cvs putinterval
+      banksum joltlen k sub 3 -1 roll 1 string cvs putinterval
    } for
    banksum cvi
 } def
@@ -137,7 +135,7 @@
    } forall 
 
    banksums
-} def
+} bind def
 
 %% ------------------------------
 
