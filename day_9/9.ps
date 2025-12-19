@@ -19,18 +19,6 @@
 
 %% ----- Data -------
 
-/test_data [
-[7 1]
-[11 1]
-[11 7]
-[9 7]
-[9 5]
-[2 5]
-[2 3]
-[7 3]
-] bind def
-
-
 /input_data [
 % <<INJECT DATA HERE>>
 ] bind def
@@ -156,6 +144,9 @@
 /p:init
 {
    /p:verticals [] def
+   /p:y_to_xranges 100000 dict def
+   /p:y_min 10e5 def
+   /p:y_max 0 def
 } bind def
 
 /p:find_verticals
@@ -187,9 +178,113 @@
 
       p:verticals exch append /p:verticals exch def
    } for
+} bind def
 
 
+/p:find_y_min_max
+{
+   p:verticals
+   {
+      aload pop
+      /p:y_max exch p:y_max max def
+      /p:y_min exch p:y_min min def
+      pop
+   } forall
+} bind def
 
+
+/p:find_horizontal_ranges
+{
+   p:find_y_min_max
+
+   p:y_min 1 p:y_max
+   {
+      /p:y exch def
+      /p:crossings [] def
+      /p:intervals [] def
+
+      % Get array of all vericals crossing a horizontal line at p:y.
+      p:verticals
+      {
+         aload pop      % -- x y1 y2
+         p:y gt exch    % p:y < y2
+         p:y le and     % y1 <= p:y
+         {
+            /p:crossings p:crossings 3 -1 roll append def   % append x to p:crossings
+         }
+         { pop } ifelse
+      } forall
+
+      p:crossings sort_array
+
+      % Pair the crossings to ranges
+      0 2 p:crossings length 2 sub
+      {
+         p:crossings exch 2 getinterval
+         /p:intervals p:intervals 3 -1 roll append def
+      } for
+
+      p:y_to_xranges p:y p:intervals put
+   } for
+} bind def
+
+
+/p:test_rectangle  % [x y] [x y] --
+{
+   /p:a exch def
+   /p:b exch def
+
+   /p:x0 p:a 0 get p:b 0 get min def
+   /p:x1 p:a 0 get p:b 0 get max def
+   /p:y0 p:a 1 get p:b 1 get min def
+   /p:y1 p:a 1 get p:b 1 get max def
+   /p:ok true def
+
+   p:y0 1 p:y1
+   {
+      /p:found false def
+      p:y_to_xranges exch get
+      {  % [Xbegin Xend]
+         aload pop
+         p:x1 ge exch   % Xend p:x1 ge   (p:x1 <= Xend)
+         p:x0 le and    % Xbegin p:x0 le (p:x0 >= Xbegin)
+         { /p:found true def exit } if
+      } forall
+
+      p:found false eq { /p:ok false def exit } if
+   } for
+
+   p:ok
+   {
+      p:x1 p:x0 sub 1 add p:y1 p:y0 sub 1 add mul
+   }
+   {
+      0
+   } ifelse
+} bind def
+
+/p:test_rectangles
+{
+   /input exch def
+   /len input length def
+   /current_max 0 def
+
+   0 1 len 2 sub
+   {
+      /i exch def
+
+      i 1 add 1 len 1 sub
+      {
+         /j exch def
+
+         input i get
+         input j get
+         p:test_rectangle
+
+         /current_max exch current_max max def
+      } for
+   } for
+   current_max
 } bind def
 
 
@@ -228,11 +323,9 @@ setup_output
 input_data largest_square /result_step_1 exch def
 
 p:init
-
-% test_data p:find_verticals
 input_data p:find_verticals
-
-%input_data meassure_pairs
+p:find_horizontal_ranges
+input_data p:test_rectangles /result_step_2 exch def
 
 
 % Output to paper
@@ -240,9 +333,9 @@ LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 9 -) prtstr 1 1 6 { pop newline } for
 setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
-% setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
+setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 9 - Anders Piniesjö\n) println 
 (Result step 1: ) print result_step_1 20 string cvs println
-% (Result step 2: ) print result_step_2 20 string cvs println
+(Result step 2: ) print result_step_2 20 string cvs println
