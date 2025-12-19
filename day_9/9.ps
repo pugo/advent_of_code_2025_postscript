@@ -143,10 +143,45 @@
 
 /p:init
 {
+   /p:horizontals [] def
    /p:verticals [] def
    /p:y_to_xranges 100000 dict def
+   /p:x_to_yranges 100000 dict def
+   /p:x_min 10e5 def
+   /p:x_max 0 def
    /p:y_min 10e5 def
    /p:y_max 0 def
+} bind def
+
+/p:find_horizontals
+{
+   /p:data exch def
+   /p:len p:data length def
+
+   /p:start 0 def
+   p:data 0 get 1 get p:data 1 get 1 get ne
+   {
+      % First two y coordintates not equal. Start on second number to get horizontals.
+      /p:start 1 def
+   } if
+
+   /p:end p:start p:len add 1 sub def
+
+   p:start 2 p:end
+   {
+      dup
+      p:data exch get /p:a exch def 
+      p:data exch 1 add p:len mod get /p:b exch def
+
+      p:a 1 get         % Get y
+      p:a 0 get         % Get x1
+      p:b 0 get         % Fet x2
+      2 copy min        % Find min of x1 and x2
+      3 1 roll max      % Find max of x1 and x2
+      3 array astore    % Make array [y x1 x2]
+
+      p:horizontals exch append /p:horizontals exch def
+   } for
 } bind def
 
 /p:find_verticals
@@ -180,6 +215,17 @@
    } for
 } bind def
 
+
+/p:find_x_min_max
+{
+   p:horizontals
+   {
+      aload pop
+      /p:x_max exch p:x_max max def
+      /p:x_min exch p:x_min min def
+      pop
+   } forall
+} bind def
 
 /p:find_y_min_max
 {
@@ -228,6 +274,57 @@
    } for
 } bind def
 
+/p:find_vertical_ranges
+{
+   p:find_x_min_max
+
+   p:x_min 1 p:x_max
+   {
+      /p:x exch def
+      /p:crossings [] def
+      /p:intervals [] def
+
+      % Get array of all horizontals crossing a vertical line at p:x.
+      p:horizontals
+      {
+         aload pop      % -- y x1 x2
+         p:x gt exch    % p:x < x2
+         p:x le and     % x1 <= p:x
+         {
+            /p:crossings p:crossings 3 -1 roll append def   % append x to p:crossings
+         }
+         { pop } ifelse
+      } forall
+
+      p:crossings sort_array
+
+      % Pair the crossings to ranges
+      0 2 p:crossings length 2 sub
+      {
+         p:crossings exch 2 getinterval
+         /p:intervals p:intervals 3 -1 roll append def
+      } for
+
+      p:x_to_yranges p:x p:intervals put
+   } for
+} bind def
+
+/p:test_range_in_ranges  % [a b]  [[q w] [r s] ...] -- bool
+{
+   /p:found false def
+
+   {
+      aload pop            % [a b] q w
+      2 index aload pop    % [a b] q w a b
+      3 -1 roll            % [a b] q a b w
+      le 3 1 roll          % [a b] bool q a
+      le and               % [a b] bool
+      { /p:found true def exit } if
+   } forall
+
+   pop
+   p:found
+} bind def
 
 /p:test_rectangle  % [x y] [x y] --
 {
@@ -240,21 +337,12 @@
    /p:y1 p:a 1 get p:b 1 get max def
    /p:ok true def
 
-   p:y0 1 p:y1
-   {
-      /p:found false def
-      p:y_to_xranges exch get
-      {  % [Xbegin Xend]
-         aload pop
-         p:x1 ge exch   % Xend p:x1 ge   (p:x1 <= Xend)
-         p:x0 le and    % Xbegin p:x0 le (p:x0 >= Xbegin)
-         { /p:found true def exit } if
-      } forall
+   [p:x0 p:x1] p:y_to_xranges p:y0 get p:test_range_in_ranges
+   [p:x0 p:x1] p:y_to_xranges p:y1 get p:test_range_in_ranges and
 
-      p:found false eq { /p:ok false def exit } if
-   } for
+   [p:y0 p:y1] p:x_to_yranges p:x0 get p:test_range_in_ranges
+   [p:y0 p:y1] p:x_to_yranges p:x1 get p:test_range_in_ranges and and
 
-   p:ok
    {
       p:x1 p:x0 sub 1 add p:y1 p:y0 sub 1 add mul
    }
@@ -286,7 +374,6 @@
    } for
    current_max
 } bind def
-
 
 %% ------------------------------
 
@@ -323,8 +410,12 @@ setup_output
 input_data largest_square /result_step_1 exch def
 
 p:init
+input_data p:find_horizontals
 input_data p:find_verticals
+
 p:find_horizontal_ranges
+p:find_vertical_ranges
+
 input_data p:test_rectangles /result_step_2 exch def
 
 
