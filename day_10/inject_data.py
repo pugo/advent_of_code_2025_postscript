@@ -21,7 +21,7 @@ class Injector(data_injector.DataInjector):
             items[-1] = items[-1].replace('{', '[')
             items[-1] = items[-1].replace('}', ']')
 
-            buttons = [i.replace(',', ' ').replace('(', '[').replace(')', ']') for i in items[1:-2]]
+            buttons = [i.replace(',', ' ').replace('(', '[').replace(')', ']') for i in items[1:-1]]
             lines.append(f'[{items[0]} [{' '.join(buttons)}] {items[-1].replace(',', ' ')}]')
 
         return '\n'.join(lines)

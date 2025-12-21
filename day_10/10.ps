@@ -92,79 +92,6 @@
    exch put                         % Put element to end.
 } bind def
 
-/split_string  %% str -- array   | Split a string with items separated by space into an array of correct types
-{
-   /s exch def
-   s length array /out exch def
-   /n 0 def
-
-   {
-      s token  % Tokenize one, stack: rest token bool
-      {
-         exch /s exch def     % Store rest.
-         out n 3 -1 roll put
-         /n n 1 add def
-      }
-      { exit } ifelse
-   } loop
-
-   n array dup 0 out 0 n getinterval putinterval   % Trim array.
-} def
-
-/deep_copy_stringarray  %% array -- array   | Deep copy an array of strings.
-{
-   /old exch def
-   /new old length array def
-
-   0 1 old length 1 sub
-   {                       % i
-      dup old exch get     % i str
-      dup length string    % i str newstr
-      0 3 -1 roll          % i newstr 0 str
-      dup length 0 exch    % i newstr 0 str 0 slen
-      getinterval          % i newstr 0 str
-      2 index              % i newstr 0 str newstr
-      5 1 roll             % newstr i newstr 0 str
-      putinterval          % newstr i
-      new exch 3 -1 roll   % new i 
-      put    
-   } for
-   new
-} bind def
-
-/sort_array_sweep
-{
-   /s:swapcount 0 def
-   dup length 2 sub
-   0 1 3 -1 roll
-   {
-      /s:i exch def
-      dup /s:a exch s:i get def
-      dup /s:b exch s:i 1 add get def
-
-      s:a null eq { /s:a 0 def } if
-      s:b null eq { /s:b 0 def } if
-
-      s:a s:b gt
-      {
-         dup s:i s:b put
-         dup s:i 1 add s:a put
-         /s:swapcount s:swapcount 1 add def
-      } if
-   } for
-   pop  % pop array
-   s:swapcount
-} def
-
-/sort_array  %% Array --  | Sorts the array with numbers
-{
-   /target exch def
-   {
-      target sort_array_sweep
-      0 eq { exit } if
-   } loop
-} bind def
-
 %% ------------------------------
 
 /solve_problem
@@ -172,23 +99,46 @@
    aload pop 
    /sp:buttons exch def
    /sp:lamps exch def
-   /sp:buttons_count sp:buttons length def
-   sp:buttons_count ==
+   /sp:buttons_count sp:buttons length def 
+   /sp:result 10000 def
+
+   % Loop 0 .. 2^buttons_count - 1
    0 1 1 sp:buttons_count bitshift 1 sub
-   {
-      ==
+   {  
+      /sp:mask exch def
+      /sp:val 0 def
+      /sp:presscount 0 def
+
+      0 1 sp:buttons_count 1 sub
+      {
+         /i exch def
+         sp:mask 1 i bitshift and 0 ne
+         {
+            /sp:val sp:val sp:buttons i get xor def
+            /sp:presscount sp:presscount 1 add def
+         } if
+      } for
+
+      sp:val sp:lamps eq
+      {
+         /sp:result sp:result sp:presscount min def
+      } if   
    } for
-   () println
 
+   sp:result 10000 eq { /sp:result 0 def } if
+   sp:result
 } bind def
-
 
 
 /solve_problems
 {
+   /s:result 0 def
    {
       solve_problem
+      /s:result exch s:result add def
    } forall
+
+   s:result
 } bind def
 
 /lamps_to_int
@@ -196,20 +146,22 @@
    /p:lamps exch def
    /p:lampresult 0 def
 
-   p:lamps
+   0 1 p:lamps length 1 sub
    {
-      /p:lampresult p:lampresult 1 bitshift def   % Shift result << 1
-      35 eq
+      /p:i exch def
+      p:lamps p:i get 35 eq   % '#' = 35
       {
-         /p:lampresult p:lampresult 1 add def   % add lowest bit
+         /p:lampresult p:lampresult 1 p:i bitshift or def
       } if
-   } forall
+   } for
 
    p:lampresult
 } bind def
 
+
 /buttons_to_int_array
 {
+   /bia:lampcount exch def
    /bia:buttons exch def
    /bia:result [] def
 
@@ -217,7 +169,8 @@
    {
       /bia:button_value 0 def
       {
-         /bia:button_value bia:button_value 1 4 -1 roll bitshift add def
+         1 exch bitshift
+         /bia:button_value exch bia:button_value or def
       } forall
       /bia:result bia:result bia:button_value append def
    } forall
@@ -233,7 +186,7 @@
    /p:target exch def
 
    p:target lamps_to_int /p:target_int exch def
-   p:buttons buttons_to_int_array /p:buttons_int_array exch def
+   p:buttons p:target length buttons_to_int_array /p:buttons_int_array exch def
    % Skip the jolt-thing for now.
 
    [p:target_int p:buttons_int_array]
@@ -265,25 +218,23 @@
 %% ------------------------------
 
 
-
-%% ------------------------------
-
 setup_output
 
-test_data parse_indata /parsed_data exch def
-parsed_data solve_problems
+% test_data parse_indata /parsed_data exch def
+% parsed_data solve_problems /result_step_1 exch def
 
-%input_data largest_square /result_step_1 exch def
+input_data parse_indata /parsed_data exch def
+parsed_data solve_problems /result_step_1 exch def
 
 
 % Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 10 -) prtstr 1 1 6 { pop newline } for
-%setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
+setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
 %setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 10 - Anders Piniesjö\n) println 
-%(Result step 1: ) print result_step_1 20 string cvs println
+(Result step 1: ) print result_step_1 20 string cvs println
 %(Result step 2: ) print result_step_2 20 string cvs println
