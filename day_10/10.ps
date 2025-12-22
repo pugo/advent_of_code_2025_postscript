@@ -25,7 +25,6 @@
 [(.###.#) [[0 1 2 3 4] [0 3 4] [0 1 2 4 5] [1 2]] [10 11 11 5 10 5]]
 ] bind def
 
- 
 /input_data [
 % <<INJECT DATA HERE>>
 ] bind def
@@ -92,54 +91,6 @@
    exch put                         % Put element to end.
 } bind def
 
-%% ------------------------------
-
-/solve_problem
-{
-   aload pop 
-   /sp:buttons exch def
-   /sp:lamps exch def
-   /sp:buttons_count sp:buttons length def 
-   /sp:result 10000 def
-
-   % Loop 0 .. 2^buttons_count - 1
-   0 1 1 sp:buttons_count bitshift 1 sub
-   {  
-      /sp:mask exch def
-      /sp:val 0 def
-      /sp:presscount 0 def
-
-      0 1 sp:buttons_count 1 sub
-      {
-         /i exch def
-         sp:mask 1 i bitshift and 0 ne
-         {
-            /sp:val sp:val sp:buttons i get xor def
-            /sp:presscount sp:presscount 1 add def
-         } if
-      } for
-
-      sp:val sp:lamps eq
-      {
-         /sp:result sp:result sp:presscount min def
-      } if   
-   } for
-
-   sp:result 10000 eq { /sp:result 0 def } if
-   sp:result
-} bind def
-
-
-/solve_problems
-{
-   /s:result 0 def
-   {
-      solve_problem
-      /s:result exch s:result add def
-   } forall
-
-   s:result
-} bind def
 
 /lamps_to_int
 {
@@ -178,33 +129,15 @@
    bia:result
 } bind def
 
-/parse_machine
+
+/array_all_zero  % array -- bool  | Return true if all elements in array is 0.
 {
-   aload pop
-   /p:jolts exch def
-   /p:buttons exch def
-   /p:target exch def
-
-   p:target lamps_to_int /p:target_int exch def
-   p:buttons p:target length buttons_to_int_array /p:buttons_int_array exch def
-   % Skip the jolt-thing for now.
-
-   [p:target_int p:buttons_int_array]
+  true exch
+  {
+    0 ne { pop false exit } if
+  } forall
 } bind def
 
-
-/parse_indata
-{
-   /p:input exch def
-   /p:result [] def
-
-   p:input
-   {
-      parse_machine /p:result p:result 3 -1 roll append def
-   } forall
-
-   p:result
-} bind def
 
 
 %% --- Step 1 ----------
@@ -214,27 +147,240 @@
 %% lowest result. Multiple presses of a button would just toggle the effect,
 %% due to the XOR operation.
 
+/s1:solve_problem
+{
+   aload pop 
+   /sp:jolts exch def
+   /sp:buttons exch def
+   /sp:lamps exch def
+   /sp:buttons_count sp:buttons length def 
+   /sp:result 10000 def
+
+   % Loop 0 .. 2^buttons_count - 1
+   0 1 1 sp:buttons_count bitshift 1 sub
+   {  
+      /sp:mask exch def
+      /sp:val 0 def
+      /sp:presscount 0 def
+
+      0 1 sp:buttons_count 1 sub
+      {
+         /i exch def
+         sp:mask 1 i bitshift and 0 ne
+         {
+            /sp:val sp:val sp:buttons i get xor def
+            /sp:presscount sp:presscount 1 add def
+         } if
+      } for
+
+      sp:val sp:lamps eq
+      {
+         /sp:result sp:result sp:presscount min def
+      } if   
+   } for
+
+   sp:result 10000 eq { /sp:result 0 def } if
+   sp:result
+} bind def
+
+
+/s1:solve_problems
+{
+   /s:result 0 def
+   {
+      s1:solve_problem
+      /s:result exch s:result add def
+   } forall
+
+   s:result
+} bind def
+
+
+/s1:parse_indata
+{
+   /p:input exch def
+   /p:result [] def
+
+   p:input
+   {
+      aload pop
+      /p:jolts exch def
+      /p:buttons exch def
+      /p:target exch def
+
+      p:target lamps_to_int /p:target_int exch def
+      p:buttons p:target length buttons_to_int_array /p:buttons_int_array exch def
+
+      [p:target_int p:buttons_int_array p:jolts]
+
+      /p:result p:result 3 -1 roll append def
+   } forall
+
+   p:result
+} bind def
+
+
+%% --- Step 2 ----------
+
+/array_copy   % arr -- arr2
+{
+  /src exch def
+  /dst src length array def
+  dst 0 src putinterval
+  dst
+} bind def
+
+
+/p2:search  % key_index presses need best_so_far -- best value
+{
+   30 dict begin
+   /best_so_far exch def
+   /need_array exch def
+   /press_count exch def
+   /button_index exch def
+  
+   % (Enter search - index: ) print button_index 20 string cvs print (, press_count: ) print press_count 20 string cvs print (, best: ) print best_so_far 20 string cvs println
+   % (Need array:) println
+   % need_array { 20 string cvs println } forall
+
+   /min_needed 0 def
+   need_array {
+      min_needed max /min_needed exch def
+   } forall
+
+   % Break if worse than best
+   press_count min_needed add best_so_far ge
+   {
+      % do nothing.
+      best_so_far
+   }
+   {
+      % Success?
+      need_array array_all_zero
+      {
+         % (SUCCESS!) == 
+         press_count best_so_far min
+      }
+      {
+         % No more buttons
+         button_index p2:buttons_len ge
+         {
+            best_so_far
+         }
+         {
+            % Find highest number of presses allowed for this button index
+            /maxpress 1000000 def
+            p2:buttons button_index get
+            {
+%               ( --- : ) print maxpress 20 string cvs println
+               
+               need_array exch get maxpress min /maxpress exch def
+            } forall
+            % (Maxpress: ) print maxpress 20 string cvs println
+
+            /result best_so_far def
+
+            maxpress -1 0
+            {
+               /k exch def
+               % (  -- looping press: ) print k 20 string cvs print (, index: ) print button_index 20 string cvs println
+
+               need_array array_copy /need2 exch def
+
+               p2:buttons button_index get
+               { % loop over contents of button with button_index
+                  /j exch def
+                  need2 j need2 j get k sub put 
+               } forall
+
+               /ok true def
+               need2 { 0 lt { /ok false def } if } forall 
+
+               ok {
+                  button_index 1 add press_count k add need2 result p2:search
+                  /result exch result min def
+               } if
+            } for
+            result
+
+         } ifelse
+      } ifelse
+   } ifelse
+   % (-- leaving ) println
+   end
+} bind def
+
+
+/p2:solve_problem
+{
+   (--- 0) =
+   aload pop 
+   /p2:jolts exch def
+   /p2:buttons exch def
+   /p2:buttons_len p2:buttons length def
+   (--- 1) ==
+   /p2:need p2:jolts length array def
+   0 1 p2:jolts length 1 sub 
+   { 
+      /i exch def 
+      p2:need i p2:jolts i get put 
+   } for   
+
+   0 0 p2:need 10000 p2:search    % key_index presses need best_so_far
+   dup
+   (Result: ) print 20 string cvs println
+} bind def
+
+/p2:solve_problems
+{
+   /p2:result 0 def
+   {
+      p2:solve_problem
+      /p2:result exch p2:result add def
+   } forall
+
+   p2:result
+} bind def
+
+
+/s2:parse_indata
+{
+   /p:input exch def
+   /p:result [] def
+
+   p:input
+   {
+      aload pop
+      /p:jolts exch def
+      /p:buttons exch def
+      /p:target exch def
+
+      [p:buttons p:jolts]
+
+      /p:result p:result 3 -1 roll append def
+   } forall
+   p:result
+} bind def
 
 %% ------------------------------
 
 
 setup_output
 
-% test_data parse_indata /parsed_data exch def
-% parsed_data solve_problems /result_step_1 exch def
+input_data s1:parse_indata /s1:parsed_data exch def
+s1:parsed_data s1:solve_problems /result_step_1 exch def
 
-input_data parse_indata /parsed_data exch def
-parsed_data solve_problems /result_step_1 exch def
-
+test_data s2:parse_indata /s2:parsed_data exch def
+s2:parsed_data p2:solve_problems /result_step_2 exch def
 
 % Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 10 -) prtstr 1 1 6 { pop newline } for
 setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
-%setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
+setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 10 - Anders Piniesjö\n) println 
 (Result step 1: ) print result_step_1 20 string cvs println
-%(Result step 2: ) print result_step_2 20 string cvs println
+(Result step 2: ) print result_step_2 20 string cvs println
