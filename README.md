@@ -40,8 +40,24 @@ The successor of PostScript is PDF.
 
 ## Possible?
 Doing Advent of Code in PostScript should be possible. This far
-I have done day 1 to 8. Maybe some of the coming tasks
+I have done day 1 to 9. Maybe some of the coming tasks
 will hit the limits of PostScript, but this far it works!
 
+## Results
+I managed to finish day 1 to day 10 step 1.
+
+*Day 10 part 2 exceeds what is practical in PostScript due to the 
+need for integer Gaussian elimination and constrained search.*
+
+It would be very demanding to implement this in PostScript since
+it lacks several needed language features. Also recursion is
+painful in PostScript due to the fact that it lacks local
+scopes and clojures. The latter can be emulated by juggling dicts
+for the dictionary stack, but it is a painful way. The main
+blocker is that it is painfully slow when it comes to heavy
+computation. 
+
+Finally it showed that PostScript is an interpreted page description 
+language from the 80:s. **But!** It has been a great journey!
 
 <img src="utils/ps-logo.png" width="200px"/>
