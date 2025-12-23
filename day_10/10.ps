@@ -152,6 +152,7 @@
    aload pop 
    /sp:jolts exch def
    /sp:buttons exch def
+   pop   % Skip buttons array
    /sp:lamps exch def
    /sp:buttons_count sp:buttons length def 
    /sp:result 10000 def
@@ -211,7 +212,7 @@
       p:target lamps_to_int /p:target_int exch def
       p:buttons p:target length buttons_to_int_array /p:buttons_int_array exch def
 
-      [p:target_int p:buttons_int_array p:jolts]
+      [p:target_int p:buttons p:buttons_int_array p:jolts]
 
       /p:result p:result 3 -1 roll append def
    } forall
@@ -220,146 +221,155 @@
 } bind def
 
 
+
 %% --- Step 2 ----------
 
-/array_copy   % arr -- arr2
+/p2:solve_lamp_config
 {
-  /src exch def
-  /dst src length array def
-  dst 0 src putinterval
-  dst
+   /p2:lamp_config exch def   % Lamp config to find
+   /p2:config_results [] def
+
+   % % Loop 0 .. 2^p2:buttons_len - 1 (All button combinations)
+   0 1 1 p2:buttons_len bitshift 1 sub
+   {  
+      /p2:mask exch def       % button mask this turn
+      /p2:val 0 def
+      /p2:presscount 0 def
+      /p2:presslist [] def
+
+      /p2:joltsdelta p2:jolts_len array def
+      0 1 p2:jolts_len 1 sub { p2:joltsdelta exch 0 put } for
+
+      0 1 p2:buttons_len 1 sub
+      {
+         /i exch def
+         p2:mask 1 i bitshift and 0 ne
+         {
+            /p2:presscount p2:presscount 1 add def
+            /p2:val p2:val p2:buttons i get xor def
+
+            p2:buttons_array i get
+            {
+               dup
+               p2:joltsdelta exch p2:joltsdelta 4 -1 roll get 1 add put
+            } forall
+            /p2:presslist p2:presslist i append def
+         } if
+      } for
+
+      p2:val p2:lamp_config eq
+      {
+         (lamp config: ) print p2:lamp_config 20 string cvs print (, presses: ) print 
+         p2:presscount 20 string cvs print (, presslist: ) print p2:presslist ==
+         (joltsdelta: ) print p2:joltsdelta ==
+
+         /p2:config_results p2:config_results [p2:presscount p2:joltsdelta] append def
+      } if
+
+   } for
+
+   p2:lamps_dict p2:lamp_config p2:config_results put
 } bind def
 
 
-/p2:search  % key_index presses need best_so_far -- best value
+/p2:iterate_jolt_bits
 {
-   30 dict begin
-   /best_so_far exch def
-   /need_array exch def
-   /press_count exch def
-   /button_index exch def
-  
-   % (Enter search - index: ) print button_index 20 string cvs print (, press_count: ) print press_count 20 string cvs print (, best: ) print best_so_far 20 string cvs println
-   % (Need array:) println
-   % need_array { 20 string cvs println } forall
+   /p2:max 0 def
+   p2:jolts { /p2:max exch p2:max max def } forall    % Get highest jolt number
+   /p2:jolt_bit_len p2:max ln 2 ln div floor cvi 1 add def  % Calculate number of bits in highest jolt number
+   /p2:presses_sum 0 def
 
-   /min_needed 0 def
-   need_array {
-      min_needed max /min_needed exch def
-   } forall
+   /p2:slice_array p2:jolt_bit_len array def
 
-   % Break if worse than best
-   press_count min_needed add best_so_far ge
+   0 1 p2:jolt_bit_len 1 sub     % Iterate through all the bits in the jolts.
    {
-      % do nothing.
-      best_so_far
-   }
-   {
-      % Success?
-      need_array array_all_zero
+      /b exch def
+
+      /p2:jolt_bit_slice 0 def
+
+      0 1 p2:jolts_len 1 sub
       {
-         % (SUCCESS!) == 
-         press_count best_so_far min
+         /j exch def
+         /p2:jolt_bit_slice p2:jolt_bit_slice 1 bitshift def
+         p2:jolts j get b neg bitshift 1 and
+         /p2:jolt_bit_slice exch p2:jolt_bit_slice or def
+      } for
+
+      p2:slice_array b p2:jolt_bit_slice put
+   } for
+
+   /sum 0 def
+   /weight 1 def
+   0 1 p2:jolt_bit_len 1 sub
+   {
+      /b exch def
+      /slice p2:slice_array b get def
+
+      % /cost p2:lamps_dict slice get 0 get def
+
+      p2:lamps_dict slice known
+      {
+         /cost p2:lamps_dict slice get 0 get def
       }
       {
-         % No more buttons
-         button_index p2:buttons_len ge
-         {
-            best_so_far
-         }
-         {
-            % Find highest number of presses allowed for this button index
-            /maxpress 1000000 def
-            p2:buttons button_index get
-            {
-%               ( --- : ) print maxpress 20 string cvs println
-               
-               need_array exch get maxpress min /maxpress exch def
-            } forall
-            % (Maxpress: ) print maxpress 20 string cvs println
-
-            /result best_so_far def
-
-            maxpress -1 0
-            {
-               /k exch def
-               % (  -- looping press: ) print k 20 string cvs print (, index: ) print button_index 20 string cvs println
-
-               need_array array_copy /need2 exch def
-
-               p2:buttons button_index get
-               { % loop over contents of button with button_index
-                  /j exch def
-                  need2 j need2 j get k sub put 
-               } forall
-
-               /ok true def
-               need2 { 0 lt { /ok false def } if } forall 
-
-               ok {
-                  button_index 1 add press_count k add need2 result p2:search
-                  /result exch result min def
-               } if
-            } for
-            result
-
-         } ifelse
+         % Ingen lösning → detta paritetsmönster är omöjligt
+         /cost 0 def
       } ifelse
-   } ifelse
-   % (-- leaving ) println
-   end
+
+      /sum sum cost weight mul add def
+      /weight weight 2 mul def
+   } for
+
+   % undo last extra multiply
+   /sum sum 2 idiv def
+
+   (Sum: ) print sum 20 string cvs println
+   (--------------------------------------) println 
 } bind def
 
 
 /p2:solve_problem
 {
-   (--- 0) =
-   aload pop 
-   /p2:jolts exch def
-   /p2:buttons exch def
-   /p2:buttons_len p2:buttons length def
-   (--- 1) ==
-   /p2:need p2:jolts length array def
-   0 1 p2:jolts length 1 sub 
-   { 
-      /i exch def 
-      p2:need i p2:jolts i get put 
-   } for   
+   aload pop
+   /p2:jolts exch def                     % array of jolt numbers
+   /p2:jolts_len p2:jolts length def      % int, number of jolt numbers
+   /p2:buttons exch def                   % array of button ints
+   /p2:buttons_array exch def             % array of button lamps
+   /p2:lamps exch def                     % int representation of lamps
+   /p2:buttons_len p2:buttons length def  % number of buttons
+   /p2:lamps_dict 100000 dict def
 
-   0 0 p2:need 10000 p2:search    % key_index presses need best_so_far
-   dup
-   (Result: ) print 20 string cvs println
+   % Try to find solutions for 0 .. 2^p2:jolts_len - 1 combinations. Stor in dict.
+   0 1 1 p2:jolts_len bitshift 1 sub
+   {
+      p2:solve_lamp_config
+   } for
+   p2:lamps_dict { exch (key: ) print 20 string cvs print (, value: ) print ==  } forall
+   () println
+   %p2:iterate_jolt_bits
+
+   % () println
+   % p2:lamps_dict
+   % {
+   %    == == () println
+   %    % (Key: ) 3 -1 roll 40 string cvs println  pop % (, value: ) print 40 string cvs println
+   % }
+   % forall
+   % % sp:result 10000 eq { /sp:result 0 def } if
+   % p2:result
+   0
 } bind def
+
 
 /p2:solve_problems
 {
    /p2:result 0 def
    {
       p2:solve_problem
-      /p2:result exch p2:result add def
+%      /p2:result exch p2:result add def
    } forall
 
    p2:result
-} bind def
-
-
-/s2:parse_indata
-{
-   /p:input exch def
-   /p:result [] def
-
-   p:input
-   {
-      aload pop
-      /p:jolts exch def
-      /p:buttons exch def
-      /p:target exch def
-
-      [p:buttons p:jolts]
-
-      /p:result p:result 3 -1 roll append def
-   } forall
-   p:result
 } bind def
 
 %% ------------------------------
@@ -367,20 +377,20 @@
 
 setup_output
 
-input_data s1:parse_indata /s1:parsed_data exch def
+test_data s1:parse_indata /s1:parsed_data exch def
 s1:parsed_data s1:solve_problems /result_step_1 exch def
 
-test_data s2:parse_indata /s2:parsed_data exch def
-s2:parsed_data p2:solve_problems /result_step_2 exch def
+%test_data s2:parse_indata /s2:parsed_data exch def
+s1:parsed_data p2:solve_problems /result_step_2 exch def
 
 % Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 10 -) prtstr 1 1 6 { pop newline } for
 setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
-setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
+%setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 10 - Anders Piniesjö\n) println 
 (Result step 1: ) print result_step_1 20 string cvs println
-(Result step 2: ) print result_step_2 20 string cvs println
+%(Result step 2: ) print result_step_2 20 string cvs println
