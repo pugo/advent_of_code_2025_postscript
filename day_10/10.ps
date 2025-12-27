@@ -259,10 +259,6 @@
 
       p2:val p2:lamp_config eq
       {
-         (lamp config: ) print p2:lamp_config 20 string cvs print (, presses: ) print 
-         p2:presscount 20 string cvs print (, presslist: ) print p2:presslist ==
-         (joltsdelta: ) print p2:joltsdelta ==
-
          /p2:config_results p2:config_results [p2:presscount p2:joltsdelta] append def
       } if
 
@@ -271,60 +267,111 @@
    p2:lamps_dict p2:lamp_config p2:config_results put
 } bind def
 
+/p2:lsb_bit_slice_old
+{
+   /p2:input_jolts exch def
+   /p2:lsb_bit_slice_result 0 def
+
+   0 1 p2:input_jolts length 1 sub
+   {
+      /j exch def
+      /p2:lsb_bit_slice_result p2:lsb_bit_slice_result 1 bitshift def
+      p2:input_jolts j get 1 and
+      /p2:lsb_bit_slice_result exch p2:lsb_bit_slice_result or def
+   } for
+
+   p2:lsb_bit_slice_result
+} bind def
+
+
+/p2:lsb_bit_slice
+{
+   /p2:input_jolts exch def
+   /p2:res 0 def
+
+   0 1 p2:input_jolts length 1 sub
+   {
+      /j exch def
+      p2:input_jolts j get 1 and 1 eq
+      {
+         /p2:res p2:res 1 j bitshift or def
+      } if
+   } for
+
+   p2:res
+} bind def
+
+
+/p2:transform_joltages
+{
+   /p2:input_delta exch def
+   /p2:input_jolts exch def
+   /p2:transform_result p2:input_jolts length array def
+
+   0 1 p2:input_jolts length 1 sub
+   {
+      /t exch def
+      p2:input_jolts t get
+      p2:input_delta t get sub
+      2 idiv
+      p2:transform_result t 3 -1 roll put
+   } for
+   p2:transform_result
+} bind def 
 
 /p2:iterate_jolt_bits
 {
-   /p2:max 0 def
-   p2:jolts { /p2:max exch p2:max max def } forall    % Get highest jolt number
-   /p2:jolt_bit_len p2:max ln 2 ln div floor cvi 1 add def  % Calculate number of bits in highest jolt number
-   /p2:presses_sum 0 def
-
+   /p2:max_jolt 0 def
+   p2:jolts { /p2:max_jolt exch p2:max_jolt max def } forall    % Get highest jolt number
+   /p2:jolt_bit_len p2:max_jolt ln 2 ln div floor cvi 1 add def  % Calculate number of bits in highest jolt number
    /p2:slice_array p2:jolt_bit_len array def
+   /p2:states [[0 p2:jolts]] def
+   /p2:scale 1 def
 
-   0 1 p2:jolt_bit_len 1 sub     % Iterate through all the bits in the jolts.
    {
-      /b exch def
+      p2:scale p2:max_jolt ge { exit } if
+      /p2:new_states [] def
 
-      /p2:jolt_bit_slice 0 def
-
-      0 1 p2:jolts_len 1 sub
+      p2:states
       {
-         /j exch def
-         /p2:jolt_bit_slice p2:jolt_bit_slice 1 bitshift def
-         p2:jolts j get b neg bitshift 1 and
-         /p2:jolt_bit_slice exch p2:jolt_bit_slice or def
-      } for
+         aload pop
+         /p2:state_joltages exch def
+         /p2:loop_presses exch def
 
-      p2:slice_array b p2:jolt_bit_slice put
-   } for
+         p2:state_joltages p2:lsb_bit_slice   % Get LSB:s for jolts.
+         p2:lamps_dict exch get
 
-   /sum 0 def
-   /weight 1 def
-   0 1 p2:jolt_bit_len 1 sub
+         {  % For all press variant in lamp setting
+            aload pop
+            /p2:combo_delta exch def
+            /p2:combo_presses exch def
+            /p2:new_jolts p2:state_joltages p2:combo_delta p2:transform_joltages def
+
+            /ok true def
+            p2:new_jolts {
+               0 lt { /ok false def } if
+            } forall
+
+            ok {
+               /p2:new_states p2:new_states
+                  [p2:loop_presses p2:combo_presses p2:scale mul add
+                   p2:new_jolts] append def
+            } if
+         } forall
+
+      } forall
+
+      /p2:states p2:new_states def
+      /p2:scale p2:scale 2 mul def
+   } loop
+
+   /p2:lowest 100000 def
+   p2:states
    {
-      /b exch def
-      /slice p2:slice_array b get def
+      0 get p2:lowest min /p2:lowest exch def
+   } forall
 
-      % /cost p2:lamps_dict slice get 0 get def
-
-      p2:lamps_dict slice known
-      {
-         /cost p2:lamps_dict slice get 0 get def
-      }
-      {
-         % Ingen lösning → detta paritetsmönster är omöjligt
-         /cost 0 def
-      } ifelse
-
-      /sum sum cost weight mul add def
-      /weight weight 2 mul def
-   } for
-
-   % undo last extra multiply
-   /sum sum 2 idiv def
-
-   (Sum: ) print sum 20 string cvs println
-   (--------------------------------------) println 
+   p2:lowest
 } bind def
 
 
@@ -344,20 +391,11 @@
    {
       p2:solve_lamp_config
    } for
-   p2:lamps_dict { exch (key: ) print 20 string cvs print (, value: ) print ==  } forall
-   () println
-   %p2:iterate_jolt_bits
 
-   % () println
-   % p2:lamps_dict
-   % {
-   %    == == () println
-   %    % (Key: ) 3 -1 roll 40 string cvs println  pop % (, value: ) print 40 string cvs println
-   % }
-   % forall
-   % % sp:result 10000 eq { /sp:result 0 def } if
-   % p2:result
-   0
+   p2:iterate_jolt_bits
+
+   (Machine result: ) print dup 20 string cvs println
+   % (----------------------------------) =
 } bind def
 
 
@@ -366,7 +404,7 @@
    /p2:result 0 def
    {
       p2:solve_problem
-%      /p2:result exch p2:result add def
+      /p2:result exch p2:result add def
    } forall
 
    p2:result
@@ -377,10 +415,10 @@
 
 setup_output
 
-test_data s1:parse_indata /s1:parsed_data exch def
-s1:parsed_data s1:solve_problems /result_step_1 exch def
+%test_data s1:parse_indata /s1:parsed_data exch def
+input_data s1:parse_indata /s1:parsed_data exch def
 
-%test_data s2:parse_indata /s2:parsed_data exch def
+s1:parsed_data s1:solve_problems /result_step_1 exch def
 s1:parsed_data p2:solve_problems /result_step_2 exch def
 
 % Output to paper
@@ -388,9 +426,9 @@ LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 10 -) prtstr 1 1 6 { pop newline } for
 setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
-%setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
+setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 10 - Anders Piniesjö\n) println 
 (Result step 1: ) print result_step_1 20 string cvs println
-%(Result step 2: ) print result_step_2 20 string cvs println
+(Result step 2: ) print result_step_2 20 string cvs println
