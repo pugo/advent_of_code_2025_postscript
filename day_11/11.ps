@@ -32,9 +32,9 @@
 (iii) [(out)]
 >> def
 
-/input_data [
+/input_data <<
 % <<INJECT DATA HERE>>
-] bind def
+>> def
 
 %% ----- Output -------
 
@@ -101,26 +101,126 @@
 
 %% --- Step 1 ----------
 
+/s1:init   %% dataset -- 
+{
+   /input exch def   
+   /workarray 1000 array def
+
+   /workarray_index -1 def
+   (you) push_node
+
+   /memory 100000 dict def
+} bind def
+
+
+/inc_memory  %% node amount --  | Increase value for node in memory. Create if necessary.
+{
+   /inc_amount exch def
+   /inc_node exch def
+
+   memory inc_node known
+   {
+      memory inc_node
+      memory inc_node get inc_amount add
+      put
+   }
+   {
+      memory inc_node inc_amount put
+   } ifelse
+} bind def
+
+
+/push_node  %% node --    | Add node to workarray
+{
+   dup input exch get   % node leafs
+   [ 3 -1 roll 0 4 -1 roll ]
+
+   /workarray_index workarray_index 1 add def
+   workarray workarray_index 3 -1 roll put
+} bind def
+
+
+/pop_node %% --   | Pop current node
+{
+   (-- pop) =
+   /workarray_index workarray_index 1 sub def
+} bind def
+
+
+% Nodes: [(node) child_index [children]]
+/NODE 0 def
+/CHILD_INDEX 1 def
+/CHILDREN 2 def 
+
+/s1:iterate
+{
+   {
+      workarray_index -1 eq { exit } if
+
+      /current workarray workarray_index get def
+
+      current aload pop
+      /current_children exch def
+      /current_child_index exch def
+      /current_node exch def
+
+      /current_child current_children current_child_index get def
+
+      memory current_child known
+      {
+         memory current_child get
+         current_node exch inc_memory
+
+         /current_child_index current_child_index 1 add def
+         current CHILD_INDEX current_child_index put
+
+         current_child_index current_children length 1 sub gt
+         {
+            pop_node            
+         } if
+      }
+      {
+         current_child (out) eq
+         {
+            current NODE get 1 inc_memory
+            current CHILD_INDEX current CHILD_INDEX get 1 add put
+            pop_node
+            (--- out) =
+         }
+         {
+            current_child =
+            current_child push_node
+         } ifelse
+
+      } ifelse
+   } loop
+
+
+} bind def
+
+
 %% --- Step 2 ----------
 
 
 %% ------------------------------
 
-
 setup_output
 
-%test_data s1:parse_indata /s1:parsed_data exch def
-%input_data s1:parse_indata /s1:parsed_data exch def
+% test_data s1:init
+input_data s1:init
+s1:iterate
+
+/result_step_1 memory (you) get def
 
 
 % Output to paper
 LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 11 -) prtstr 1 1 6 { pop newline } for
-% setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
+setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
 % setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 11 - Anders Piniesjö\n) println 
-% (Result step 1: ) print result_step_1 20 string cvs println
+(Result step 1: ) print result_step_1 20 string cvs println
 % (Result step 2: ) print result_step_2 20 string cvs println
