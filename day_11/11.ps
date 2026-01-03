@@ -32,6 +32,22 @@
 (iii) [(out)]
 >> def
 
+/test_data_step_2 <<
+(svr) [(aaa) (bbb)]
+(aaa) [(fft)]
+(fft) [(ccc)]
+(bbb) [(tty)]
+(tty) [(ccc)]
+(ccc) [(ddd) (eee)]
+(ddd) [(hub)]
+(hub) [(fff)]
+(eee) [(dac)]
+(dac) [(fff)]
+(fff) [(ggg) (hhh)]
+(ggg) [(out)]
+(hhh) [(out)]
+>> def
+
 /input_data <<
 % <<INJECT DATA HERE>>
 >> def
@@ -101,19 +117,23 @@
 
 %% --- Step 1 ----------
 
-/s1:init   %% dataset -- 
+/s1:init   %% dataset start_node -- 
 {
+   /start_node exch def
    /input exch def   
    /workarray 1000 array def
 
    /workarray_index -1 def
-   (you) push_node
+   start_node s1:push_node
 
-   /memory 100000 dict def
+   /memory 10000 dict def
+
+   % Set up memory for stop node
+   (out) 1 s1:inc_memory
 } bind def
 
 
-/inc_memory  %% node amount --  | Increase value for node in memory. Create if necessary.
+/s1:inc_memory  %% node amount --  | Increase value for node in memory. Create if necessary.
 {
    /inc_amount exch def
    /inc_node exch def
@@ -130,7 +150,7 @@
 } bind def
 
 
-/push_node  %% node --    | Add node to workarray
+/s1:push_node  %% node --    | Add node to workarray
 {
    dup input exch get   % node leafs
    [ 3 -1 roll 0 4 -1 roll ]
@@ -140,11 +160,11 @@
 } bind def
 
 
-/pop_node %% --   | Pop current node
+/s1:pop_node %% --   | Pop current node
 {
-   (-- pop) =
    /workarray_index workarray_index 1 sub def
 } bind def
+
 
 
 % Nodes: [(node) child_index [children]]
@@ -168,49 +188,192 @@
 
       memory current_child known
       {
+         % Existing node or end node (already added).
          memory current_child get
-         current_node exch inc_memory
+         current_node exch s1:inc_memory
 
          /current_child_index current_child_index 1 add def
          current CHILD_INDEX current_child_index put
 
          current_child_index current_children length 1 sub gt
          {
-            pop_node            
+            % Instead of updating the parent this turn, just pop the node
+            % and handle the new state next turn.
+            s1:pop_node            
          } if
       }
       {
-         current_child (out) eq
-         {
-            current NODE get 1 inc_memory
-            current CHILD_INDEX current CHILD_INDEX get 1 add put
-            pop_node
-            (--- out) =
-         }
-         {
-            current_child =
-            current_child push_node
-         } ifelse
-
+         % New node, push to work array.
+         current_child s1:push_node
       } ifelse
    } loop
-
-
 } bind def
 
 
 %% --- Step 2 ----------
+
+/s2:init   %% dataset start_node -- 
+{
+   /start_node exch def
+   /input exch def   
+
+   /workarray 1000 array def
+   /workarray_index -1 def
+   start_node false false s2:push_node
+
+   /memory 10000 dict def
+
+   /node_index input length 1 add dict def   % Index for node names to int (plus "out")
+   s2:index_names
+
+   /s2:result 0 def
+} bind def
+
+
+/s2:index_names
+{
+   /i 0 def
+   input
+   {
+      pop
+      node_index exch i put
+      /i i 1 add def
+   } forall
+
+   node_index (out) i put
+} bind def
+
+
+% It is way too slow to index the memory on an array "[ node seen_fft seen_dac ]".
+% Instead I first, during init, index all names to a unique int, in dict "node_index".
+% The keys here are stored as "index << 2 | seen_fft << 1 | seen_dac", where index
+% is the index looked up from the node->index dict.
+
+/s2:make_key   %% node seen_fft seen_dac -- key (int)  | Make key for memory from input
+{
+   node_index 4 -1 roll get        % seen_fft seen_dac node_index
+   2 mul                           % seen_fft seen_dac node_index*2 
+   3 -1 roll {1} {0} ifelse add    % seen_dac sum 
+   2 mul                           % seen_dac sum*2
+   exch {1} {0} ifelse add         % sum 
+} bind def
+
+
+/s2:push_node  %% node seen_fft seen_dac --    | Add node to workarray
+{
+   /seen_dac exch def
+   /seen_fft exch def
+   /pnode exch def
+   % (Pushing: ) print pnode println
+   
+   /pchildren pnode (out) eq
+   { [] }                           % "out" has no children.
+   { input pnode get } ifelse def   % normal children.
+
+   [ pnode 0 pchildren seen_fft seen_dac 0 ]
+
+   /workarray_index workarray_index 1 add def
+   workarray workarray_index 3 -1 roll put
+} bind def
+
+
+/s2:pop_node %% --   | Pop current node
+{
+   % (current pop: ) print current NODE get =
+   /workarray_index workarray_index 1 sub def
+} bind def
+
+
+% Nodes: [(node) child_index [children] seen_fft seen_dac]
+/NODE 0 def
+/CHILD_INDEX 1 def
+/CHILDREN 2 def
+/SEEN_FFT 3 def
+/SEEN_DAC 4 def
+/SUM 5 def
+
+/s2:add_to_parent_sum   %% value --   | Add value to parent sum
+{
+   workarray_index 0 gt
+   {
+      /parent workarray workarray_index 1 sub get def
+      parent SUM get add parent SUM 3 -1 roll put
+   }
+   {
+      /s2:result exch def
+   } ifelse
+} bind def
+
+
+/s2:iterate
+{
+   {
+      % Exit on stack empty
+      workarray_index -1 eq { exit } if
+
+      /current workarray workarray_index get def
+
+      current NODE get (out) eq
+      {
+         % Handle (out) - end of search.
+         current SEEN_FFT get current SEEN_DAC get and
+         {
+            /return_value 1 def
+         }
+         {
+            /return_value 0 def
+         } ifelse
+
+         /key current NODE get current SEEN_FFT get current SEEN_DAC get s2:make_key def
+         memory key return_value put
+            
+         return_value s2:add_to_parent_sum
+         s2:pop_node
+      }
+      {
+         % Handle key known.
+         /key current NODE get current SEEN_FFT get current SEEN_DAC get s2:make_key def
+
+         memory key known
+         {
+            memory key get s2:add_to_parent_sum
+            s2:pop_node
+         }
+         {
+            current CHILD_INDEX get current CHILDREN get length lt
+            {
+               % Push child.
+               /child current CHILDREN get current CHILD_INDEX get get def
+               current CHILD_INDEX current CHILD_INDEX get 1 add put
+
+               /f2 current SEEN_FFT get child (fft) eq or def
+               /d2 current SEEN_DAC get child (dac) eq or def
+               child f2 d2 s2:push_node
+            }
+            {
+               % No more children, pop.
+               current SUM get
+               dup memory key 3 -1 roll put
+               s2:add_to_parent_sum
+               s2:pop_node
+            } ifelse
+         } ifelse
+      } ifelse
+   } loop
+} bind def
 
 
 %% ------------------------------
 
 setup_output
 
-% test_data s1:init
-input_data s1:init
+input_data (you) s1:init
 s1:iterate
-
 /result_step_1 memory (you) get def
+
+input_data (svr) s2:init
+s2:iterate
+/result_step_2 s2:result def
 
 
 % Output to paper
@@ -218,9 +381,9 @@ LM TM moveto
 setbold (Advent of Code 2025) prtstr setnormal newline newline
 (- Day 11 -) prtstr 1 1 6 { pop newline } for
 setbold (Result step 1: ) prtstr setnormal result_step_1 100 string cvs prtstr newline newline
-% setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
+setbold (Result step 2: ) prtstr setnormal result_step_2 100 string cvs prtstr newline
 
 % Write to stdout as well
 (\nAdvent of Code 2025  - Day 11 - Anders Piniesjö\n) println 
 (Result step 1: ) print result_step_1 20 string cvs println
-% (Result step 2: ) print result_step_2 20 string cvs println
+(Result step 2: ) print result_step_2 20 string cvs println

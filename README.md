@@ -7,7 +7,7 @@ By Anders Piniesjö.
 This is an attempt to solve the [Advent of Code for 2025](https://adventofcode.com/2025) 
 in **PostScript**.
 
-<img src="images/progress.png" width="260px"/>
+<img src="images/progress.png" width="400px"/>
 
 ## Why
 About 27 years or so ago I wrote [PS-HTTPD](https://www.pugo.org/projects/pshttpd), 
@@ -60,7 +60,7 @@ That also makes recursion problematic for tree searching.
 
 *The successor of PostScript is PDF.*
 
-<img src="images/ps-logo.png" width="160px"/>
+<img src="images/ps-logo.png" width="220px"/>
 
 ## Results
 I have currently managed to finish days 1 to 10.
