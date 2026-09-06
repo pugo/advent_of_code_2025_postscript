@@ -1,5 +1,5 @@
 Class {
-	#name : 'AoC2024Day06Grid',
+	#name : 'Grid',
 	#superclass : 'Object',
 	#instVars : [
 		'grid',
@@ -12,7 +12,7 @@ Class {
 }
 
 { #category : 'accessing' }
-AoC2024Day06Grid class >> from: data [
+Grid class >> from: data [
 
 	^ self new
 		initializeFrom: data
@@ -20,43 +20,43 @@ AoC2024Day06Grid class >> from: data [
 ]
 
 { #category : 'running' }
-AoC2024Day06Grid >> charAtPos: pos [
+Grid >> charAtPos: pos [
 
    ^ (grid at: (pos y)) at: (pos x)
 ]
 
 { #category : 'running' }
-AoC2024Day06Grid >> charAtPos: pos set: newChar [
+Grid >> charAtPos: pos set: newChar [
 
    (grid at: (pos y)) at: (pos x) put: newChar.
 	
 ]
 
 { #category : 'initialization' }
-AoC2024Day06Grid >> countX [
+Grid >> countChar: chr [
 	| result |
 	
 	result := 0.
 	
 	grid do: [ :line |
-		line do: [ :c | c = $X ifTrue: [ result := result + 1 ] ]
+		line do: [ :c | c = chr ifTrue: [ result := result + 1 ] ]
 	 ].
 
    ^ result.
 ]
 
 { #category : 'initialization' }
-AoC2024Day06Grid >> grid [
+Grid >> grid [
 	^ grid
 ]
 
 { #category : 'initialization' }
-AoC2024Day06Grid >> height [
+Grid >> height [
 	^ height
 ]
 
 { #category : 'initialization' }
-AoC2024Day06Grid >> initializeFrom: data [
+Grid >> initializeFrom: data [
 
    grid := data.
 	height := grid size.
@@ -65,7 +65,7 @@ AoC2024Day06Grid >> initializeFrom: data [
 ]
 
 { #category : 'running' }
-AoC2024Day06Grid >> posIsInside: pos [
+Grid >> posIsInside: pos [
 	"Return true if pos is inside the grid."
 	
 	^ ((pos x > 0) & (pos x <= width) & (pos y > 0) & (pos y <= height))
@@ -73,7 +73,7 @@ AoC2024Day06Grid >> posIsInside: pos [
 ]
 
 { #category : 'initialization' }
-AoC2024Day06Grid >> printGrid [
+Grid >> printGrid [
 
 	grid do: [ :line | 
 		line do: [ :c |
@@ -84,6 +84,6 @@ AoC2024Day06Grid >> printGrid [
 ]
 
 { #category : 'initialization' }
-AoC2024Day06Grid >> width [
+Grid >> width [
 	^ width
 ]
